@@ -19,4 +19,5 @@ def get_packages_on_rpm() -> List[Package]:
         version_splitted = "-".join(splitted[(len(splitted)-2):len(splitted)]).split(".")
         version = ".".join(version_splitted[0:len(version_splitted)-1])
         packages.append(Package(name, version))
+    stdout_file.close()
     return packages

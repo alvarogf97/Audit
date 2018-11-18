@@ -1,5 +1,8 @@
+import codecs
 from typing import List
 
+from audit.core.core import shell_command
+from audit.core.environment import Environment
 from audit.core.packet_manager import PacketManager, Package
 
 
@@ -21,11 +24,37 @@ class DarwinPacketManager(PacketManager):
                  ["tar xvzf flex-2.6.3.tar.gz", "cd$./flex-2.6.3", "./configure", "make", "make install"])
         }
         dependencies = {
-                    "pcap": ["bisonte", "flex"]
-                    }
+            "pcap": ["bisonte", "flex"]
+        }
         super().__init__(path_download_files, applications, dependencies)
 
-    def get_installed_packets(self)-> List[Package]:
+    def get_installed_packets(self) -> List[Package]:
+        shell_command("system_profiler SPApplicationsDataType")
+        file = codecs.open(Environment().path_streams + "/stdout.txt",
+                           mode="rb", encoding=Environment().codec_type,
+                           errors="replace")
         packages = []
-        # TO-DO
+
+        file.readline()
+        file.readline()
+        line = file.readline()
+
+        while line:
+            name = line.replace(" ", "").replace("\n", "").replace(":", "")
+            version = ""
+            file.readline()  # whitespace
+            sub_line = file.readline()
+            while sub_line:
+                if "Version:" in sub_line:
+                    version = sub_line.replace(" ", "").replace("\n", "").replace("Version:", "")
+                    sub_line = file.readline()
+                elif ("Obtained from:" in sub_line or "Last Modified:" in sub_line
+                      or "Kind:" in sub_line or "64-Bit (Intel):" in sub_line
+                      or "Signed by:" in sub_line or "Location:" in sub_line
+                      or "Get Info String:" in sub_line):
+                    sub_line = file.readline()
+                else:
+                    sub_line = None
+            line = file.readline()
+            packages.append(Package(name, version))
         return packages

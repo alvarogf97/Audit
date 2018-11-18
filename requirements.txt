@@ -6,3 +6,4 @@ psutil
 pcap-ct
 distro
 netifaces
+python-iptables; sys_platform == 'linux'
