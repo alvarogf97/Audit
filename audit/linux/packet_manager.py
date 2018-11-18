@@ -1,5 +1,5 @@
+import distro
 from typing import List
-
 from audit.core.packet_manager import PacketManager, Package
 
 
@@ -25,7 +25,17 @@ class LinuxPacketManager(PacketManager):
                     }
         super().__init__(path_download_files, applications, dependencies)
 
+    # if distro is not supported returned empty list
     def get_installed_packets(self)-> List[Package]:
         packages = []
-        # TO-DO
+        sys_name = distro.id()
+        if sys_name == "ubuntu" or sys_name == "debian":
+            from audit.linux.distributions.debian import get_packages_on_debian
+            packages = get_packages_on_debian()
+        elif sys_name == "arch":
+            from audit.linux.distributions.arch import get_packages_on_arch
+            packages = get_packages_on_arch()
+        else:
+            from audit.linux.distributions.rpm import get_packages_on_rpm
+            packages = get_packages_on_rpm()
         return packages

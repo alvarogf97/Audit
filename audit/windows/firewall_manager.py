@@ -1,5 +1,8 @@
+import datetime
+import os
 from audit.core.connection import Connection
-from audit.core.core import shell_command, communicate
+from audit.core.core import exec_command
+from audit.core.environment import Environment
 from audit.core.firewall_manager import FirewallManager
 
 
@@ -14,9 +17,9 @@ class WindowsFirewallManager(FirewallManager):
     def add_rule(self, connection: Connection):
 
         kwargs = dict()
-        command = "netsh advfirewall firewall add rule"
+        command = "netsh advfirewall firewall add rule dir=in"
 
-        connection.send_msg("6")
+        connection.send_msg("6")  # number of params for client
 
         connection.send_msg("name")
         name = connection.recv_msg()
@@ -45,26 +48,43 @@ class WindowsFirewallManager(FirewallManager):
         for key, value in kwargs.items():
             command += " " + key + "=" + value
 
-        shell_command(command)
-        stdout, stderr = communicate()
+        exec_command(connection, command)
 
-        if stdout != '':
-            # send output
-            connection.send_msg(stdout)
-        else:
-            # send error if something happen
-            connection.send_msg(stderr)
+    def remove_rule(self, connection: Connection):
+        connection.send_msg("1")  # number of params for client
+        connection.send_msg("name")
+        name = connection.recv_msg()
+        command = "netsh advfirewall firewall delete rule name=" + name
+        exec_command(connection, command)
 
-    def remove_rule(self, connection: Connection): pass
+    def get_rules(self, connection: Connection):
+        command = "netsh advfirewall firewall show rule name=all"
+        exec_command(connection, command)
 
-    def get_rules(self, connection: Connection): pass
+    def export_firewall(self, connection: Connection):
+        time_info = datetime.datetime.now()
+        filename = str(time_info.year)+"_"+str(time_info.month)+"_"\
+                   + str(time_info.day)+"_"+str(time_info.hour)+"_"\
+                   + str(time_info.minute)+".wfw"
+        command = "netsh advfirewall export \"" + Environment().path_firewall_resources + "/" + filename + "\""
+        print(command)
+        exec_command(connection, command)
 
-    def export_firewall(self, connection: Connection): pass
+    def import_firewall(self, connection: Connection):
+        files = [f for f in os.listdir(Environment().path_firewall_resources) \
+                 if os.path.isfile(os.path.join(Environment().path_firewall_resources, f))]
+        responses = "\n".join(files)
+        connection.send_msg(responses)
+        try:
+            option = int(connection.recv_msg())
+            filename = files[option]
+            command = "netsh advfirewall import \"" + Environment().path_firewall_resources + "/" + filename + "\""
+            exec_command(connection, command)
+        except:
+            connection.send_msg("option error")
 
-    def import_firewall(self, connection: Connection): pass
+    def disable(self, connection: Connection):
+        exec_command(connection, "netsh advfirewall set allprofiles state off")
 
-    def disable(self, connection: Connection): pass
-
-    def enable(self, connection: Connection): pass
-
-    def reset_to_default(self, connection: Connection): pass
+    def enable(self, connection: Connection):
+        exec_command(connection, "netsh advfirewall set allprofiles state on")

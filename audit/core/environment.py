@@ -9,22 +9,25 @@ class Environment:
     class __Environment:
         def __init__(self):
 
+            features = get_features()
+
             self.base_path = os.getcwd() + "/resources"
             self.path_certs = get_path_certs(self.base_path)
             self.path_download_files = self.base_path + "/downloads"
             self.path_streams = self.base_path + "/streams"
-
-            features = get_features()
-
+            self.path_firewall_resources = self.base_path + "/firewall_resources"
             self.private_ip = features["local_ip"]
             self.public_ip = str(requests.get('https://api.ipify.org').text)
             self.os = features["os"]
             self.default_adapter = features["default_adapter"]
             self.default_gateway = features["default_gateway"]
             self.codec_type = features["codec_type"]
-            self.packetManager = None
             self.time_retrieve_network_sniffer = 60
             self.time_analysis_network = 0
+
+            # managers
+            self.packetManager = None
+            self.firewallManager = None
 
             # create path dirs
             if not os.path.exists(self.base_path):
@@ -33,6 +36,8 @@ class Environment:
                 os.mkdir(self.path_streams)
             if not os.path.exists(self.path_download_files):
                 os.mkdir(self.path_download_files)
+            if not os.path.exists(self.path_firewall_resources):
+                os.mkdir(self.path_firewall_resources)
 
     instance = None
 
@@ -70,15 +75,21 @@ def get_features():
         raise Exception("platform not supported")
 
 
-def define_manager():
+def define_managers():
     if Environment().os == "Windows":
         from audit.windows.packet_manager import WindowsPacketManager
+        from audit.windows.firewall_manager import WindowsFirewallManager
         Environment().__setattr__("packetManager",WindowsPacketManager(Environment().path_download_files))
+        Environment().__setattr__("firewallManager", WindowsFirewallManager())
     elif Environment().os == "Linux":
         from audit.linux.packet_manager import LinuxPacketManager
+        from audit.linux.firewall_manager import LinuxFirewallManager
         Environment().__setattr__("packetManager",LinuxPacketManager(Environment().path_download_files))
+        Environment().__setattr__("firewallManager", LinuxFirewallManager())
     elif Environment().os == "Darwin":
         from audit.darwin.packet_manager import DarwinPacketManager
+        from audit.darwin.firewall_manager import DarwinFirewallManager
         Environment().__setattr__("packetManager",DarwinPacketManager(Environment().path_download_files))
+        Environment().__setattr__("firewallManager", DarwinFirewallManager())
     else:
         raise Exception("platform not supported")

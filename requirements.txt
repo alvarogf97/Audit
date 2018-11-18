@@ -1,7 +1,8 @@
-netifaces
 upnpclient
 ifaddr
 dpkt
 requests
 psutil
 pcap-ct
+distro
+netifaces

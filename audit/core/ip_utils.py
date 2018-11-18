@@ -1,7 +1,8 @@
 import smtplib
 import socket
-from audit.core.environment import Environment
 import netifaces
+from audit.core.environment import Environment
+
 
 
 # return local wifi interface ip and device name

@@ -2,7 +2,7 @@ import os
 from audit.core.connection import Connection
 from audit.core.core import check_active_processes, cd, get_processes, kill_process, restart, exec_command
 from audit.core.device import retrieve_device_information
-from audit.core.environment import Environment, define_manager
+from audit.core.environment import Environment, define_managers
 from audit.core.file_protocols import get, send
 from audit.core.ip_utils import send_ip
 from audit.core.network import get_ports_open_by_processes, network_analysis, watch_traffic
@@ -26,7 +26,7 @@ class Agent:
 
         self.connection = Connection(port)
         self.active_processes = dict()
-        define_manager()
+        define_managers()
 
     def serve_forever(self):
         print("server located on: " + Environment().private_ip + ":" + str(self.port))
@@ -76,6 +76,8 @@ class Agent:
                             watch_traffic(self.connection)
                         elif command.startswith("restart"):
                             restart()
+                        elif command.startswith("firewall"):
+                            Environment().firewallManager.start(self.connection)
                         else:
                             exec_command(self.connection, command)
                         self.connection.send_msg(os.getcwd())  # always send CWD
