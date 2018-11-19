@@ -27,7 +27,6 @@ class LinuxPacketManager(PacketManager):
 
     # if distro is not supported returned empty list
     def get_installed_packets(self)-> List[Package]:
-        packages = []
         sys_name = distro.id()
         if sys_name == "ubuntu" or sys_name == "debian":
             from audit.linux.distributions.debian import get_packages_on_debian

@@ -9,6 +9,40 @@ import iptc
 
 class LinuxFirewallManager(FirewallManager):
 
+    def start(self, connection: Connection):
+        options = "1    add chain\n" \
+                + "2    remove chain\n" \
+                + "3    add rule\n" \
+                + "4    remove rule\n" \
+                + "5    get rules\n" \
+                + "6    export firewall settings\n" \
+                + "7    import firewall settings\n" \
+                + "8    disable firewall\n" \
+                + "9    enable firewall\n" \
+                + "10    exit"
+        connection.send_msg(options)
+        option = connection.recv_msg()
+        while option != "10":
+                if option == "1":
+                    self.add_chain()
+                elif option == "2":
+                    self.remove_chain()
+                elif option == "3":
+                    self.add_rule(connection)
+                elif option == "4":
+                    self.remove_rule(connection)
+                elif option == "5":
+                    self.get_rules(connection)
+                elif option == "6":
+                    self.export_firewall(connection)
+                elif option == "7":
+                    self.import_firewall(connection)
+                elif option == "8":
+                    self.disable(connection)
+                elif option == "9":
+                    self.enable(connection)
+                option = connection.recv_msg()
+
     def add_chain(self, connection: Connection):
         name = connection.recv_msg()
         iptc.Table.FILTER.create_chain(name)
@@ -18,14 +52,41 @@ class LinuxFirewallManager(FirewallManager):
         iptc.Table.FILTER.delete_chain(name)
 
     def add_rule(self, connection: Connection):
-        name_chain = connection.recv_msg()
-        # TO-DO
+
+        kwargs = dict()
+        connection.send_msg("5")  # number of params for client
+
+        connection.send_msg("chain name")
+        chain_name = connection.recv_msg()
+
+        connection.send_msg("interface")
+        interface = connection.recv_msg()
+        if interface != "": kwargs["interface"] = interface
+
+        connection.send_msg("src")
+        src = connection.recv_msg()
+        if src != "": kwargs["src"] = src
+
+        connection.send_msg("action")
+        action = connection.recv_msg()
+        if action != "": kwargs["action"] = action
+
+        connection.send_msg("protocol")
+        protocol = connection.recv_msg()
+        if protocol != "": kwargs["protocol"] = protocol
+
+        chain = iptc.Chain(iptc.Table(iptc.Table.FILTER), chain_name)
+        rule = iptc.Rule()
+        if kwargs.get("interface") is not None: rule.in_interface = kwargs.get("interface")
+        if kwargs.get("src") is not None: rule.src = kwargs.get("src")
+        if kwargs.get("action") is not None: rule.create_target(kwargs.get("action"))
+        if kwargs.get("protocol") is not None: rule.protocol = kwargs.get("protocol")
+        chain.insert_rule(rule)
 
     def remove_rule(self, connection: Connection):
         rule_name = connection.recv_msg()
         table = iptc.Table(iptc.Table.FILTER)
         table.autocommit = False
-        chain = iptc.Chain(table, "FORWARD")
         for chain in table.chains:
             for rule in chain.rules:
                 if rule.target.name == rule_name:
