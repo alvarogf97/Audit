@@ -20,6 +20,7 @@ class Environment:
             self.private_ip = features["local_ip"]
             self.public_ip = str(requests.get('https://api.ipify.org').text)
             self.os = features["os"]
+            self.distro = features["distro"]
             self.system_version = features["version"]
             self.default_adapter = features["default_adapter"]
             self.default_gateway = features["default_gateway"]

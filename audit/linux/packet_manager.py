@@ -1,7 +1,6 @@
 from abc import abstractmethod
-
-import distro
 from typing import List, Dict
+from audit.core.environment import Environment
 from audit.core.packet_manager import PacketManager, Package, Vulnerability
 
 
@@ -35,14 +34,13 @@ class LinuxPacketManager(PacketManager):
 
 
 def get_suitable_packet_manager(path_download_files: str) -> LinuxPacketManager:
-    sys_name = distro.id()
+    sys_name = Environment().distro
     if sys_name == "ubuntu" or sys_name == "debian":
         from audit.linux.distributions.debian_based import DebianPacketManager
         return DebianPacketManager(path_download_files)
     elif sys_name == "arch":
         from audit.linux.distributions.arch_based import ArchPacketManager
-        packages = ArchPacketManager(path_download_files)
+        return ArchPacketManager(path_download_files)
     else:
         from audit.linux.distributions.rhel_based import RHELPacketManager
-        packages = RHELPacketManager(path_download_files)
-    return packages
+        return RHELPacketManager(path_download_files)

@@ -1,6 +1,6 @@
+import netifaces
 import smtplib
 import socket
-import netifaces
 from audit.core.environment import Environment
 
 

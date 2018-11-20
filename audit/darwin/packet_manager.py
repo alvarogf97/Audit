@@ -80,7 +80,7 @@ class DarwinPacketManager(PacketManager):
                                       href=vulner.get("href"),
                                       published=vulner.get("published"),
                                       last_seen=vulner.get("last_seen"),
-                                      reporter=vulner.get("reporter"),
+                                      reporter=vulner.get("lastseen"),
                                       cumulative_fix=vulner.get("cumulative_fix"))
                     vulnerabilities[packet].append(v)
         return vulnerabilities

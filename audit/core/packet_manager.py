@@ -9,9 +9,10 @@ from audit.core.core import shell_command, communicate
 
 class Package:
 
-    def __init__(self, name: str, version: str):
+    def __init__(self, name: str, version: str, full_name=None):
         self.name = name
         self.version = version
+        self.full_name = full_name
 
     def __str__(self):
         return "Name: " + self.name + "    Version: " + self.version

@@ -46,7 +46,7 @@ class ArchPacketManager(LinuxPacketManager):
                                       score=vulner.get("cvss").get("score"),
                                       href=vulner.get("href"),
                                       published=vulner.get("published"),
-                                      last_seen=vulner.get("last_seen"),
+                                      last_seen=vulner.get("lastseen"),
                                       reporter=vulner.get("reporter"),
                                       cumulative_fix=vulner.get("cumulative_fix"))
                     vulnerabilities[packet].append(v)

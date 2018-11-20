@@ -1,5 +1,8 @@
 import codecs
 from typing import List, Dict
+
+import vulners
+
 from audit.core.core import shell_command
 from audit.core.environment import Environment
 from audit.core.packet_manager import Package, Vulnerability
@@ -19,14 +22,39 @@ class RHELPacketManager(LinuxPacketManager):
                                   errors="replace")
         line = stdout_file.readline()
         while line:
+            full_name = line
             splitted = line.split("-")
             line = stdout_file.readline()
             name = "-".join(splitted[0:(len(splitted) - 2)])
             version_splitted = "-".join(splitted[(len(splitted) - 2):len(splitted)]).split(".")
             version = ".".join(version_splitted[0:len(version_splitted) - 1])
-            packages.append(Package(name, version))
+            packages.append(Package(name, version,full_name))
         stdout_file.close()
         return packages
 
     def get_vulnerabilities(self) -> Dict[Package, List[Vulnerability]]:
-        pass
+        packages = self.get_installed_packets()
+        packages.append(Package(Environment().os, Environment().system_version.split(".")[0]))
+        vulnerabilities = dict()
+        for packet in packages:
+            vulnerabilities[packet] = []
+            vulners_api = vulners.Vulners(api_key=Environment().vulners_api_key)
+            search = None
+            while search is None:
+                try:
+                    search = vulners_api.audit(os=Environment().distro,
+                                               os_version=Environment().system_version,
+                                               package=[packet.full_name])
+                except:
+                    search = None
+                if len(search.get("packages")) > 0:
+                    title = Environment().distro + " vulnerability on " + str(packet)
+                    v = Vulnerability(title=title,
+                                      score=search.get("cvss").get("score"),
+                                      href=None,
+                                      published=None,
+                                      last_seen=None,
+                                      reporter=None,
+                                      cumulative_fix=search.get("cumulative_fix"))
+                    vulnerabilities[packet].append(v)
+        return vulnerabilities
