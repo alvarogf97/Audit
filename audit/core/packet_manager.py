@@ -1,6 +1,6 @@
+import json
 import os
-from typing import List
-
+from typing import List, Dict
 import requests
 from abc import abstractmethod
 from audit.core.connection import Connection
@@ -16,6 +16,59 @@ class Package:
     def __str__(self):
         return "Name: " + self.name + "    Version: " + self.version
 
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        else:
+            return False
+
+    def __hash__(self):
+        return self.name.__hash__() + self.version.__hash__()
+
+    def __serialize__(self):
+        return {"name": self.name, "version": self.version}
+
+
+class Vulnerability:
+
+    def __init__(self, title: str, score: str, href: str,
+                 published: str, last_seen: str, reporter: str,
+                 cumulative_fix: str):
+
+        self.title = title
+        self.score = score
+        self.href = href
+        self.published = published
+        self.last_seen = last_seen
+        self.reporter = reporter
+        self.cumulative_fix = cumulative_fix
+        if self.cumulative_fix is None:
+            self.cumulative_fix = "Wait for upgrade"
+
+    def __eq__(self, other):
+        res = False
+        if isinstance(other, self.__class__):
+            for attr in self.__dict__.keys():
+                if self.__getattribute__(attr) is not None and other.__getattribute__(attr) is not None:
+                    res = self.__getattribute__(attr) == other.__getattribute__(attr)
+                else:
+                    res = False
+        return res
+
+    def __str__(self):
+        res = ""
+        for attr, value in self.__dict__.items():
+            if value is not None:
+                res += attr.title() + ": " + str(value) + "\n"
+        return res
+
+    def __serialize__(self):
+        res = dict()
+        for attr, value in self.__dict__.items():
+            if value is not None:
+                res[attr.title()] = str(value)
+        return res
+
 
 class PacketManager:
 
@@ -26,6 +79,9 @@ class PacketManager:
 
     @abstractmethod
     def get_installed_packets(self) -> List[Package]: pass
+
+    @abstractmethod
+    def get_vulnerabilities(self) -> Dict[Package, List[Vulnerability]]: pass
 
     # install_package will install package in system
     # 0:error
@@ -60,3 +116,12 @@ class PacketManager:
             msg = (0, "cannot install " + name)
         os.chdir(cwd)
         return msg
+
+    @staticmethod
+    def remap_keys(dictionary: Dict[Package, List[Vulnerability]]):
+        res = []
+        for package, vulnerabilities in dictionary.items():
+            vulnerabilities_list = [vulner.__serialize__() for vulner in vulnerabilities]
+            res.append({"Package": package.__serialize__(), "Vulnerabilities": vulnerabilities_list})
+        res = json.dumps(res, sort_keys=True, indent=4)
+        return res

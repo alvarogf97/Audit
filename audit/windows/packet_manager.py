@@ -1,14 +1,15 @@
+import vulners
 from collections import namedtuple
 from ctypes import byref, create_unicode_buffer, windll
 from ctypes.wintypes import DWORD
 from itertools import count
-from typing import List
+from typing import List, Dict
 
-from audit.core.packet_manager import PacketManager, Package
+from audit.core.environment import Environment
+from audit.core.packet_manager import PacketManager, Package, Vulnerability
 
 
 class WindowsPacketManager(PacketManager):
-
     """Product subclass"""
     UID_BUFFER_SIZE = 39
     PROPERTY_BUFFER_SIZE = 256
@@ -103,6 +104,39 @@ class WindowsPacketManager(PacketManager):
         packages = []
         for p_uid in self.get_installed_products_uids():
             product = self.populate_product(p_uid)
-            packages.append(Package(product.InstalledProductName, product.VersionString))
+            if product.ProductName != "" and product.VersionString != "":
+                name = product.ProductName.split(" ")
+                if len(name) > 1:
+                    name = " ".join(name[0:2])
+                else:
+                    name = product.ProductName
+                p = Package(name, product.VersionString)
+                if p not in packages:
+                    packages.append(p)
         return packages
 
+    def get_vulnerabilities(self) -> Dict[Package, List[Vulnerability]]:
+        packages = self.get_installed_packets()
+        packages.append(Package(Environment().os, Environment().system_version.split(".")[0]))
+        vulnerabilities = dict()
+        for packet in packages:
+            vulnerabilities[packet] = []
+            vulners_api = vulners.Vulners(api_key=Environment().vulners_api_key)
+            search = None
+            while search is None:
+                try:
+                    search = vulners_api.softwareVulnerabilities(packet.name, packet.version.split(".")[0], 3)
+                except:
+                    search = None
+            search = [search.get(key) for key in search if key not in ['info', 'blog', 'bugbounty']]
+            for type_vulner in search:
+                for vulner in type_vulner:
+                    v = Vulnerability(title=vulner.get("title"),
+                                      score=vulner.get("cvss").get("score"),
+                                      href=vulner.get("href"),
+                                      published=vulner.get("published"),
+                                      last_seen=vulner.get("last_seen"),
+                                      reporter=vulner.get("reporter"),
+                                      cumulative_fix=vulner.get("cumulative_fix"))
+                    vulnerabilities[packet].append(v)
+        return vulnerabilities

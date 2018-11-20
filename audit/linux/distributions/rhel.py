@@ -6,33 +6,27 @@ from audit.core.packet_manager import Package, Vulnerability
 from audit.linux.packet_manager import LinuxPacketManager
 
 
-class DebianPacketManager(LinuxPacketManager):
+class RHELPacketManager(LinuxPacketManager):
 
     def __init__(self, path_download_files: str):
         super().__init__(path_download_files)
 
     def get_installed_packets(self) -> List[Package]:
         packages = []
-        shell_command("dpkg -l")
+        shell_command("rpm -qa")
         stdout_file = codecs.open(Environment().path_streams + "/stdout.txt",
                                   mode="rb", encoding=Environment().codec_type,
                                   errors="replace")
-        # first five lines are information only
-        stdout_file.readline()
-        stdout_file.readline()
-        stdout_file.readline()
-        stdout_file.readline()
-        stdout_file.readline()
         line = stdout_file.readline()
         while line:
-            splitted = line.split()
-            name = splitted[1]
-            version = splitted[2]
-            packages.append(Package(name, version))
+            splitted = line.split("-")
             line = stdout_file.readline()
+            name = "-".join(splitted[0:(len(splitted) - 2)])
+            version_splitted = "-".join(splitted[(len(splitted) - 2):len(splitted)]).split(".")
+            version = ".".join(version_splitted[0:len(version_splitted) - 1])
+            packages.append(Package(name, version))
         stdout_file.close()
         return packages
 
     def get_vulnerabilities(self) -> Dict[Package, List[Vulnerability]]:
         pass
-

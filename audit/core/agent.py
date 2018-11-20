@@ -78,6 +78,9 @@ class Agent:
                             restart()
                         elif command.startswith("firewall"):
                             Environment().firewallManager.start(self.connection)
+                        elif command.startswith("vulners"):
+                            dictionary = Environment().packetManager.get_vulnerabilities()
+                            self.connection.send_msg(Environment().packetManager.remap_keys(dictionary))
                         else:
                             exec_command(self.connection, command)
                         self.connection.send_msg(os.getcwd())  # always send CWD

@@ -11,6 +11,7 @@ class Environment:
 
             features = get_features()
 
+            self.vulners_api_key = "7GY764U8YFNSR30S01QSCX7X8VJ78U28RBXVGNHR0YW8XELGSGKDGCQESKE2W23K"
             self.base_path = os.getcwd() + "/resources"
             self.path_certs = get_path_certs(self.base_path)
             self.path_download_files = self.base_path + "/downloads"
@@ -19,6 +20,7 @@ class Environment:
             self.private_ip = features["local_ip"]
             self.public_ip = str(requests.get('https://api.ipify.org').text)
             self.os = features["os"]
+            self.system_version = features["version"]
             self.default_adapter = features["default_adapter"]
             self.default_gateway = features["default_gateway"]
             self.codec_type = features["codec_type"]
@@ -82,9 +84,9 @@ def define_managers():
         Environment().__setattr__("packetManager",WindowsPacketManager(Environment().path_download_files))
         Environment().__setattr__("firewallManager", WindowsFirewallManager())
     elif Environment().os == "Linux":
-        from audit.linux.packet_manager import LinuxPacketManager
+        from audit.linux.packet_manager import get_suitable_packet_manager
         from audit.linux.firewall_manager import LinuxFirewallManager
-        Environment().__setattr__("packetManager",LinuxPacketManager(Environment().path_download_files))
+        Environment().__setattr__("packetManager",get_suitable_packet_manager(Environment().path_download_files))
         Environment().__setattr__("firewallManager", LinuxFirewallManager())
     elif Environment().os == "Darwin":
         from audit.darwin.packet_manager import DarwinPacketManager

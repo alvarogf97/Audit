@@ -1,6 +1,8 @@
+from abc import abstractmethod
+
 import distro
-from typing import List
-from audit.core.packet_manager import PacketManager, Package
+from typing import List, Dict
+from audit.core.packet_manager import PacketManager, Package, Vulnerability
 
 
 class LinuxPacketManager(PacketManager):
@@ -25,16 +27,22 @@ class LinuxPacketManager(PacketManager):
                     }
         super().__init__(path_download_files, applications, dependencies)
 
-    # if distro is not supported returned empty list
-    def get_installed_packets(self)-> List[Package]:
-        sys_name = distro.id()
-        if sys_name == "ubuntu" or sys_name == "debian":
-            from audit.linux.distributions.debian import get_packages_on_debian
-            packages = get_packages_on_debian()
-        elif sys_name == "arch":
-            from audit.linux.distributions.arch import get_packages_on_arch
-            packages = get_packages_on_arch()
-        else:
-            from audit.linux.distributions.rpm import get_packages_on_rpm
-            packages = get_packages_on_rpm()
-        return packages
+    @abstractmethod
+    def get_installed_packets(self)-> List[Package]: pass
+
+    @abstractmethod
+    def get_vulnerabilities(self) -> Dict[Package, List[Vulnerability]]: pass
+
+
+def get_suitable_packet_manager(path_download_files: str) -> LinuxPacketManager:
+    sys_name = distro.id()
+    if sys_name == "ubuntu" or sys_name == "debian":
+        from audit.linux.distributions.debian import DebianPacketManager
+        return DebianPacketManager(path_download_files)
+    elif sys_name == "arch":
+        from audit.linux.distributions.arch import ArchPacketManager
+        packages = ArchPacketManager(path_download_files)
+    else:
+        from audit.linux.distributions.rhel import RHELPacketManager
+        packages = RHELPacketManager(path_download_files)
+    return packages

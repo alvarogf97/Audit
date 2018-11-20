@@ -1,9 +1,9 @@
 import codecs
-from typing import List
-
+import vulners
+from typing import List, Dict
 from audit.core.core import shell_command
 from audit.core.environment import Environment
-from audit.core.packet_manager import PacketManager, Package
+from audit.core.packet_manager import PacketManager, Package, Vulnerability
 
 
 class DarwinPacketManager(PacketManager):
@@ -56,5 +56,31 @@ class DarwinPacketManager(PacketManager):
                 else:
                     sub_line = None
             line = file.readline()
-            packages.append(Package(name, version))
+            packages.append(Package(name, version.replace(",", ".")))
         return packages
+
+    def get_vulnerabilities(self) -> Dict[Package, List[Vulnerability]]:
+        packages = self.get_installed_packets()
+        packages.append(Package(Environment().os, Environment().system_version.split(".")[0]))
+        vulnerabilities = dict()
+        for packet in packages:
+            vulnerabilities[packet] = []
+            vulners_api = vulners.Vulners(api_key=Environment().vulners_api_key)
+            search = None
+            while search is None:
+                try:
+                    search = vulners_api.softwareVulnerabilities(packet.name, packet.version.split(".")[0], 3)
+                except:
+                    search = None
+            search = [search.get(key) for key in search if key not in ['info', 'blog', 'bugbounty']]
+            for type_vulner in search:
+                for vulner in type_vulner:
+                    v = Vulnerability(title=vulner.get("title"),
+                                      score=vulner.get("cvss").get("score"),
+                                      href=vulner.get("href"),
+                                      published=vulner.get("published"),
+                                      last_seen=vulner.get("last_seen"),
+                                      reporter=vulner.get("reporter"),
+                                      cumulative_fix=vulner.get("cumulative_fix"))
+                    vulnerabilities[packet].append(v)
+        return vulnerabilities
