@@ -4,6 +4,9 @@ from audit.core.firewall_manager import FirewallManager
 
 class DarwinFirewallManager(FirewallManager):
 
+    def start(self, connection: Connection):
+        pass
+
     def add_rule(self, connection: Connection):
         pass
 

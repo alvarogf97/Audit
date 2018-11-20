@@ -6,7 +6,7 @@ from audit.core.environment import Environment
 
 class Connection:
 
-    def __init__(self,port: int, path_certs=Environment().path_certs):
+    def __init__(self, port: int, path_certs=Environment().path_certs):
         self.sock = ssl.wrap_socket(socket.socket(socket.AF_INET, socket.SOCK_STREAM),
                                     keyfile=path_certs + "/trusted_server.pem",
                                     ssl_version=ssl.PROTOCOL_TLSv1_2,

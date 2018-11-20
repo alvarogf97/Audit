@@ -2,6 +2,7 @@ import codecs
 import os
 import subprocess
 import sys
+import warnings
 import psutil
 from audit.core.connection import Connection
 from audit.core.environment import Environment
@@ -80,7 +81,8 @@ def kill_process(connection: Connection, command: str):
             process = psutil.Process(pid)
             process.kill()
             connection.send_msg("Killed successfully")
-        except:
+        except Exception as e:
+            warnings.warn(str(e))
             connection.send_msg("Invalid arguments")
     else:
         connection.send_msg("Invalid arguments")

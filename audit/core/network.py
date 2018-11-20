@@ -3,6 +3,7 @@ import multiprocessing
 import os
 import socket
 import time
+import warnings
 import psutil
 import dpkt
 from audit.core.connection import Connection
@@ -34,8 +35,9 @@ def get_ports_open_by_processes(connection: Connection):
 def network_analysis(connection: Connection, process_active, new: bool):
     if "sniffer" in process_active.keys():
         connection.send_msg("0")  # code 0: retrieve information in background
-        connection.send_msg("collecting information in background. Time to left: " \
-                            + str(max(Environment().time_retrieve_network_sniffer - (time.time() - process_active["sniffer"][1]), 0)) \
+        connection.send_msg("collecting information in background. Time to left: "
+                            + str(max(Environment().time_retrieve_network_sniffer
+                                      - (time.time() - process_active["sniffer"][1]), 0))
                             + "\nplease wait for it")
     elif not os.path.isfile(Environment().path_streams + "/data.json") or new:
         current_cwd = os.getcwd()
@@ -46,10 +48,13 @@ def network_analysis(connection: Connection, process_active, new: bool):
             sniffer.start()
             process_active["sniffer"] = (sniffer, time.time())  # Process create
             connection.send_msg("0")  # code 0: retrieve information in background
-            connection.send_msg("Initializing analysis\ncollecting needed data\nTime to left: " \
-                                + str(max(Environment().time_analysis_network + Environment().time_retrieve_network_sniffer - (time.time() - process_active["sniffer"][1]), 0)) \
+            connection.send_msg("Initializing analysis\ncollecting needed data\nTime to left: "
+                                + str(max(Environment().time_analysis_network
+                                          + Environment().time_retrieve_network_sniffer
+                                          - (time.time() - process_active["sniffer"][1]), 0))
                                 + "\nplease wait for it")
-        except:
+        except Exception as e:
+            warnings.warn(str(e))
             # Pcap not installed
             connection.send_msg("1")  # installing pcap
             msg = Environment().packetManager.install_package(connection, "pcap")
@@ -122,7 +127,7 @@ def watch_traffic(connection: Connection):
         pc = pcap.pcap(name=adapters[int(connection.recv_msg())])
         # as long as there are new packets
         time_s = time.time()
-        while time.time() - time_s <=2: pass
+        while time.time() - time_s <= 2: pass
         if pc.stats()[0]==0:
             connection.send_msg("1")
             connection.send_msg("no data found")
@@ -149,11 +154,12 @@ def watch_traffic(connection: Connection):
                         connection.send_msg("alive")
                 else:
                     connection.send_msg("alive")
-    except:
+    except Exception as e:
+        warnings.warn(str(e))
         connection.send_msg("Something went wrong during capture this device")
         connection.send_msg("terminated")
     finish = connection.recv_msg()
-    while finish!= "finish": finish = connection.recv_msg()
+    while finish != "finish": finish = connection.recv_msg()
     connection.send_msg("finish")
 
 

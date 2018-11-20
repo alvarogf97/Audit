@@ -1,4 +1,5 @@
 import os
+import warnings
 from audit.core.connection import Connection
 from audit.core.environment import Environment
 
@@ -30,7 +31,8 @@ def get(connection: Connection, command: str):
                 send_file(connection, file)
                 print(file + " -> has been sended")
 
-    except:
+    except Exception as e:
+        warnings.warn(str(e))
         connection.send_msg("file not found")
 
 
@@ -110,7 +112,7 @@ def get_file(connection, filename, path=Environment().path_download_files):
             finish_flag = datagram.decode('utf-8')
             if finish_flag.startswith("terminated"):
                 finish = True
-        except:
+        except Exception as e:
+            warnings.warn(str(e))
             continue
     current_file.close()
-

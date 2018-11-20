@@ -1,3 +1,5 @@
+import warnings
+
 import upnpclient
 from audit.core.connection import Connection
 
@@ -38,6 +40,7 @@ def upnp(connection: Connection):
             else:
                 connection.send_msg("1")
                 connection.send_msg("invocation successfully")
-        except:
+        except Exception as e:
+            warnings.warn(str(e))
             connection.send_msg("0")  # send fails
         command = connection.recv_msg()  # get new command

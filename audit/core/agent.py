@@ -1,4 +1,5 @@
 import os
+import warnings
 from audit.core.connection import Connection
 from audit.core.core import check_active_processes, cd, get_processes, kill_process, restart, exec_command
 from audit.core.device import retrieve_device_information
@@ -84,5 +85,6 @@ class Agent:
                         else:
                             exec_command(self.connection, command)
                         self.connection.send_msg(os.getcwd())  # always send CWD
-                except:
+                except Exception as e:
+                    warnings.warn(str(e))
                     self.connection.close_connection()

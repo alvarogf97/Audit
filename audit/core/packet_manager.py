@@ -1,7 +1,8 @@
 import json
 import os
-from typing import List, Dict
+import warnings
 import requests
+from typing import List, Dict
 from abc import abstractmethod
 from audit.core.connection import Connection
 from audit.core.core import shell_command, communicate
@@ -113,7 +114,8 @@ class PacketManager:
                 msg = (0, stderr)
             else:
                 msg = (1, name + " installed successfully. rebooting system")
-        except:
+        except Exception as e:
+            warnings.warn(str(e))
             msg = (0, "cannot install " + name)
         os.chdir(cwd)
         return msg

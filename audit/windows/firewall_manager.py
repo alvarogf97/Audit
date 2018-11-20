@@ -1,5 +1,6 @@
 import datetime
 import os
+import warnings
 from audit.core.connection import Connection
 from audit.core.core import exec_command
 from audit.core.environment import Environment
@@ -99,7 +100,7 @@ class WindowsFirewallManager(FirewallManager):
         exec_command(connection, command)
 
     def import_firewall(self, connection: Connection):
-        files = [f for f in os.listdir(Environment().path_firewall_resources) \
+        files = [f for f in os.listdir(Environment().path_firewall_resources)
                  if os.path.isfile(os.path.join(Environment().path_firewall_resources, f))]
         responses = "\n".join(files)
         connection.send_msg(responses)
@@ -108,7 +109,8 @@ class WindowsFirewallManager(FirewallManager):
             filename = files[option]
             command = "netsh advfirewall import \"" + Environment().path_firewall_resources + "/" + filename + "\""
             exec_command(connection, command)
-        except:
+        except Exception as e:
+            warnings.warn(str(e))
             connection.send_msg("option error")
 
     def disable(self, connection: Connection):

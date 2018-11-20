@@ -1,8 +1,7 @@
 import codecs
-from typing import List, Dict
-
+import warnings
 import vulners
-
+from typing import List, Dict
 from audit.core.core import shell_command
 from audit.core.environment import Environment
 from audit.core.packet_manager import Package, Vulnerability
@@ -32,7 +31,7 @@ class DebianPacketManager(LinuxPacketManager):
             name = splitted[1]
             version = splitted[2]
             full_name = name + " " + version + " " + splitted[3]
-            packages.append(Package(name, version,full_name))
+            packages.append(Package(name, version, full_name))
             line = stdout_file.readline()
         stdout_file.close()
         return packages
@@ -50,17 +49,17 @@ class DebianPacketManager(LinuxPacketManager):
                     search = vulners_api.audit(os=Environment().distro,
                                                os_version=Environment().system_version,
                                                package=[packet.full_name])
-                except:
+                except Exception as e:
+                    warnings.warn(str(e))
                     search = None
                 if len(search.get("packages")) > 0:
                     title = Environment().distro + " vulnerability on " + str(packet)
                     v = Vulnerability(title=title,
                                       score=search.get("cvss").get("score"),
-                                      href=None,
-                                      published=None,
-                                      last_seen=None,
-                                      reporter=None,
+                                      href=search.get("href"),
+                                      published=search.get("published"),
+                                      last_seen=search.get("lastseen"),
+                                      reporter=search.get("reporter"),
                                       cumulative_fix=search.get("cumulative_fix"))
                     vulnerabilities[packet].append(v)
         return vulnerabilities
-

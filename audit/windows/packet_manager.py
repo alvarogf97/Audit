@@ -1,3 +1,4 @@
+import warnings
 import vulners
 from collections import namedtuple
 from ctypes import byref, create_unicode_buffer, windll
@@ -126,7 +127,8 @@ class WindowsPacketManager(PacketManager):
             while search is None:
                 try:
                     search = vulners_api.softwareVulnerabilities(packet.name, packet.version.split(".")[0], 3)
-                except:
+                except Exception as e:
+                    warnings.warn(str(e))
                     search = None
             search = [search.get(key) for key in search if key not in ['info', 'blog', 'bugbounty']]
             for type_vulner in search:

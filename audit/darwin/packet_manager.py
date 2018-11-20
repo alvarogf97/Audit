@@ -1,4 +1,5 @@
 import codecs
+import warnings
 import vulners
 from typing import List, Dict
 from audit.core.core import shell_command
@@ -70,7 +71,8 @@ class DarwinPacketManager(PacketManager):
             while search is None:
                 try:
                     search = vulners_api.softwareVulnerabilities(packet.name, packet.version.split(".")[0], 3)
-                except:
+                except Exception as e:
+                    warnings.warn(str(e))
                     search = None
             search = [search.get(key) for key in search if key not in ['info', 'blog', 'bugbounty']]
             for type_vulner in search:

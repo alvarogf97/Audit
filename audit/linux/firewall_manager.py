@@ -1,5 +1,7 @@
 import datetime
 import os
+import warnings
+
 from audit.core.connection import Connection
 from audit.core.core import exec_command, shell_command
 from audit.core.environment import Environment
@@ -24,9 +26,9 @@ class LinuxFirewallManager(FirewallManager):
         option = connection.recv_msg()
         while option != "10":
                 if option == "1":
-                    self.add_chain()
+                    self.add_chain(connection)
                 elif option == "2":
-                    self.remove_chain()
+                    self.remove_chain(connection)
                 elif option == "3":
                     self.add_rule(connection)
                 elif option == "4":
@@ -114,7 +116,7 @@ class LinuxFirewallManager(FirewallManager):
         exec_command(connection, command)
 
     def import_firewall(self, connection: Connection):
-        files = [f for f in os.listdir(Environment().path_firewall_resources) \
+        files = [f for f in os.listdir(Environment().path_firewall_resources)
                  if os.path.isfile(os.path.join(Environment().path_firewall_resources, f))]
         responses = "\n".join(files)
         connection.send_msg(responses)
@@ -123,7 +125,8 @@ class LinuxFirewallManager(FirewallManager):
             filename = files[option]
             command = "iptables-restore < \"" + Environment().path_firewall_resources + "/" + filename + "\""
             exec_command(connection, command)
-        except:
+        except Exception as e:
+            warnings.warn(str(e))
             connection.send_msg("option error")
 
     def disable(self, connection: Connection):
@@ -136,8 +139,8 @@ class LinuxFirewallManager(FirewallManager):
         shell_command("iptables -t mangle -X")
         shell_command("iptables -P INPUT ACCEPT")
         shell_command("iptables -P FORWARD ACCEPT")
-        exec_command("iptables -P OUTPUT ACCEPT")
+        exec_command(connection, "iptables -P OUTPUT ACCEPT")
 
     def enable(self, connection: Connection):
         command = "iptables-restore < \"" + Environment().path_firewall_resources + "/last\""
-        exec_command(command)
+        exec_command(connection, command)

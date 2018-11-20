@@ -1,3 +1,4 @@
+import warnings
 import upnpclient
 from audit.core.environment import Environment
 
@@ -34,7 +35,8 @@ def open_port(port, devices=None):
                 NewEnabled='1',
                 NewPortMappingDescription='Testing',
                 NewLeaseDuration=10000)
-        except:
+        except Exception as e:
             # if fails, we will try in another port
+            warnings.warn(str(e))
             ok = open_port(port+1, devices)
     return ok
