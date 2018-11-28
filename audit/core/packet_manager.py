@@ -3,12 +3,10 @@ import multiprocessing
 import os
 import time
 import warnings
-from multiprocessing import Queue
-
 import requests
+from multiprocessing import Queue
 from typing import List, Dict
 from abc import abstractmethod
-from audit.core.connection import Connection
 from audit.core.core import shell_command, communicate, restart
 from audit.core.environment import Environment
 
@@ -137,32 +135,37 @@ class PacketManager:
         self.remap_keys(self.get_vulnerabilities(queue))
 
     def scan(self, processes_active, new: bool):
-        result = ""
+        result = dict()
         if "vulners" in processes_active.keys():
             # communicate with subprocess
-            queue =  processes_active["vulners"][2]
-            result = self.get_queue_msg(queue)
+            queue = processes_active["vulners"][2]
+            result["data"] = self.get_queue_msg(queue)
+            result["status"] = False
         elif not os.path.isfile(Environment().path_streams + "/vulners.json") or new:
             queue = multiprocessing.Queue()
             vulners = multiprocessing.Process(target=self.retrieve_vulners, args=(queue,))
             vulners.start()
             processes_active["vulners"] = (vulners, time.time(), queue)
-            result = "launch scanner"
+            result["data"] = "launch scanner"
+            result["status"] = False
             self.last_msg = result
         else:
-            if not self.last_msg.startswith("output"):
+            if not isinstance(self.last_msg, Dict):
                 with open(Environment().path_streams + "/vulners.json", "r") as f:
-                    output = f.read()
-                result = "output@"+output
-                self.last_msg = result
+                    output = json.loads(f.read())
+                result["data"] = output
+                result["status"] = True
+                self.last_msg = output
             else:
-                result = self.last_msg
-        return result;
+                result["data"] = self.last_msg
+                result["status"] = True
+        return result
 
     def get_queue_msg(self, queue: Queue):
         try:
             last = queue.get(timeout=2)
             self.last_msg = last
         except Exception as e:
+            warnings.warn(str(e))
             last = self.last_msg
         return last

@@ -4,7 +4,6 @@ import subprocess
 import sys
 import warnings
 import psutil
-from audit.core.connection import Connection
 from audit.core.environment import Environment
 
 
@@ -58,19 +57,20 @@ def communicate():
 # cd change current working directory
 def cd(command: str):
     result = dict()
-    splitted = command.split("$")
+    splitted = command.split(" ", 1)
     if len(splitted) > 1:
         new_cwd = splitted[1]
         try:
             os.chdir(new_cwd)
             result["data"] = os.getcwd()
-            result["status"] = True;
-        except:
+            result["status"] = True
+        except Exception as e:
+            warnings.warn(str(e))
             result["data"] = "the directory: " + new_cwd + " doesn't exists"
-            result["status"] = False;
+            result["status"] = False
     else:
         result["data"] = "no arguments specified for cd"
-        result["status"] = False;
+        result["status"] = False
     return result
 
 
@@ -88,7 +88,7 @@ def get_processes():
 # kill_process: kill process by pid
 def kill_process(command: str):
     result = dict()
-    splitted = command.split("$")
+    splitted = command.split(" ", 1)
     if len(splitted) > 1:
         try:
             pid = int(splitted[1])

@@ -5,10 +5,8 @@ import socket
 import time
 import warnings
 from multiprocessing import Queue
-
 import psutil
 import dpkt
-from audit.core.connection import Connection
 from audit.core.environment import Environment
 
 
@@ -47,7 +45,7 @@ def network_analysis(processes_active, new: bool):
             queue = multiprocessing.Queue()
             sniffer = multiprocessing.Process(target=retrieve_in_background, args=(queue,))
             sniffer.start()
-            processes_active["sniffer"] = (sniffer, time.time(),queue)
+            processes_active["sniffer"] = (sniffer, time.time(), queue)
             result["data"] = "collecting information. Remaining time:: " \
                                 + str(max(Environment().time_analysis_network
                                           + Environment().time_retrieve_network_sniffer

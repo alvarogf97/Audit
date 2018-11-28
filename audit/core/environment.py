@@ -82,17 +82,17 @@ def define_managers():
     if Environment().os == "Windows":
         from audit.windows.packet_manager import WindowsPacketManager
         from audit.windows.firewall_manager import WindowsFirewallManager
-        Environment().__setattr__("packetManager",WindowsPacketManager(Environment().path_download_files))
+        Environment().__setattr__("packetManager", WindowsPacketManager(Environment().path_download_files))
         Environment().__setattr__("firewallManager", WindowsFirewallManager())
     elif Environment().os == "Linux":
         from audit.linux.packet_manager import get_suitable_packet_manager
         from audit.linux.firewall_manager import LinuxFirewallManager
-        Environment().__setattr__("packetManager",get_suitable_packet_manager(Environment().path_download_files))
+        Environment().__setattr__("packetManager", get_suitable_packet_manager(Environment().path_download_files))
         Environment().__setattr__("firewallManager", LinuxFirewallManager())
     elif Environment().os == "Darwin":
         from audit.darwin.packet_manager import DarwinPacketManager
         from audit.darwin.firewall_manager import DarwinFirewallManager
-        Environment().__setattr__("packetManager",DarwinPacketManager(Environment().path_download_files))
+        Environment().__setattr__("packetManager", DarwinPacketManager(Environment().path_download_files))
         Environment().__setattr__("firewallManager", DarwinFirewallManager())
     else:
         raise Exception("platform not supported")

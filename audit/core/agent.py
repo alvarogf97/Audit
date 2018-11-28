@@ -9,7 +9,7 @@ from audit.core.file_protocols import get, send
 from audit.core.ip_utils import send_ip
 from audit.core.network import get_ports_open_by_processes, network_analysis
 from audit.core.port_forwarding import open_port
-from audit.core.upnp import upnp
+from audit.core.upnp import upnp_devices_information, upnp_execute_action
 
 
 class Agent:
@@ -184,17 +184,57 @@ class Agent:
                             """
                             self.connection.send_msg(self.parse_json(network_analysis(self.active_processes, False)))
 
-                        elif command.startswith("get"):
-                            get(self.connection, command)
-
-                        elif command.startswith("send"):
-                            try:
-                                send(self.connection, command)
-                            except IOError as error:
-                                print(" file not found")
-
                         elif command.startswith("upnp devices"):
-                            upnp(self.connection)
+                            """
+                                response =
+                                    {
+                                        "status" : boolean
+                                        "data" : 
+                                            [
+                                                {
+                                                    "location": str
+                                                    "name": str
+                                                    "services:"
+                                                        [
+                                                            {
+                                                                "id": str
+                                                                "actions:"
+                                                                    [
+                                                                        {
+                                                                            "name": str
+                                                                            "args_in":
+                                                                            "args_out":
+                                                                            "url": str
+                                                                        }
+                                                                    ]
+                                                            }
+                                                        ]
+                                                }
+                                            ]
+                                    }
+                            """
+                            self.connection.send_msg(self.parse_json(upnp_devices_information()))
+
+                        elif command.startswith("upnp exec"):
+                            """
+                                response =
+                                    {
+                                        "status" : boolean
+                                        "data" : args_out
+                                    }
+                            """
+                            self.connection.send_msg(self.parse_json(upnp_execute_action(command.split("@")[1])))
+
+                        elif command.startswith("vulners"):
+                            """
+                                response =
+                                    {
+                                        "status" : boolean
+                                        "data" : str or vulners
+                                    }
+                            """
+                            self.connection.send_msg(self.parse_json(
+                                Environment().packetManager.scan(self.active_processes, False)))
 
                         elif command.startswith("restart"):
                             restart()
@@ -202,8 +242,15 @@ class Agent:
                         elif command.startswith("firewall"):
                             Environment().firewallManager.start(self.connection)
 
-                        elif command.startswith("vulners"):
-                            self.connection.send_msg(Environment().packetManager.scan(self.active_processes, False))
+                        elif command.startswith("get"):
+                            get(self.connection, command)
+
+                        elif command.startswith("send"):
+                            try:
+                                send(self.connection, command)
+                            except IOError as error:
+                                warnings.warn(str(error))
+                                print(" file not found")
 
                         else:
                             """
@@ -213,7 +260,7 @@ class Agent:
                                             "data" : str
                                     }
                             """
-                            exec_command(self.connection, command)
+                            self.connection.send_msg(self.parse_json(exec_command(command)))
 
                 except Exception as e:
                     warnings.warn(str(e))
@@ -221,5 +268,4 @@ class Agent:
 
     @staticmethod
     def parse_json(json_item) -> str:
-        return json.dumps(json_item,sort_keys=True, indent=4)
-
+        return json.dumps(json_item, sort_keys=True, indent=4)
