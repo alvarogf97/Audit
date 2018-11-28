@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from multiprocessing import Queue
 from typing import List, Dict
 from audit.core.environment import Environment
 from audit.core.packet_manager import PacketManager, Package, Vulnerability
@@ -30,7 +31,7 @@ class LinuxPacketManager(PacketManager):
     def get_installed_packets(self)-> List[Package]: pass
 
     @abstractmethod
-    def get_vulnerabilities(self) -> Dict[Package, List[Vulnerability]]: pass
+    def get_vulnerabilities(self,queue: Queue) -> Dict[Package, List[Vulnerability]]: pass
 
 
 def get_suitable_packet_manager(path_download_files: str) -> LinuxPacketManager:

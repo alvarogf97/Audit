@@ -20,19 +20,24 @@ def shell_command(command):
         handle.wait()
 
 
-# exec_command execute on client side command and send response to client
-def exec_command(connection: Connection, command: str):
+# exec_command execute on back side command and send response to client
+def exec_command(command: str):
+    result = dict()
     shell_command(command)
     stdout, stderr = communicate()
     if stdout == '' and stderr == '':
         # send that's right if there's no output
-        connection.send_msg("execution successfully")
+        result["status"] = True
+        result["data"] = "execution successfully"
     elif stdout != '':
         # send output
-        connection.send_msg(stdout)
+        result["status"] = True
+        result["data"] = stdout
     else:
         # send error if something happen
-        connection.send_msg(stderr)
+        result["status"] = False
+        result["data"] = stderr
+    return result
 
 
 # communicate get streams from subprocess which is executing shell command
@@ -51,41 +56,54 @@ def communicate():
 
 
 # cd change current working directory
-def cd(connection: Connection, command: str):
+def cd(command: str):
+    result = dict()
     splitted = command.split("$")
     if len(splitted) > 1:
         new_cwd = splitted[1]
         try:
             os.chdir(new_cwd)
-            connection.send_msg("changing directory to: " + new_cwd)
+            result["data"] = os.getcwd()
+            result["status"] = True;
         except:
-            connection.send_msg("the directory: " + new_cwd + " doesn't exists")
+            result["data"] = "the directory: " + new_cwd + " doesn't exists"
+            result["status"] = False;
     else:
-        connection.send_msg("no arguments specified for cd")
+        result["data"] = "no arguments specified for cd"
+        result["status"] = False;
+    return result
 
 
-# get_processes retrieve information about system processes
-def get_processes(connection: Connection):
-    res = ""
+# get_processes: retrieve information about system processes
+def get_processes():
+    result = dict()
+    result["satus"] = True
+    process_list = []
     for process in psutil.process_iter():
-        res += "PID: " + str(process.pid) + " NAME: " + process.name() + "\n"
-    connection.send_msg(res)
+        process_list.append({"pid": str(process.pid), "name": process.name()})
+    result["data"] = process_list
+    return result
 
 
-# kill_process kill process by pid
-def kill_process(connection: Connection, command: str):
+# kill_process: kill process by pid
+def kill_process(command: str):
+    result = dict()
     splitted = command.split("$")
     if len(splitted) > 1:
         try:
             pid = int(splitted[1])
             process = psutil.Process(pid)
             process.kill()
-            connection.send_msg("Killed successfully")
+            result["status"] = True
+            result["data"] = "Killed successfully"
         except Exception as e:
+            result["status"] = False
+            result["data"] = "Invalid arguments"
             warnings.warn(str(e))
-            connection.send_msg("Invalid arguments")
     else:
-        connection.send_msg("Invalid arguments")
+        result["status"] = False
+        result["data"] = "Invalid arguments"
+    return result
 
 
 # restart restart the system
@@ -100,4 +118,5 @@ def check_active_processes(process_active):
         if not process_active[process][0].is_alive():
             revocation_list.append(process)
     for name in revocation_list:
+        process_active[name][2].close()
         process_active.pop(name, None)  # Process is finish

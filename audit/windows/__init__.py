@@ -1,3 +1,4 @@
+import multiprocessing
 import platform
 from audit.core.ip_utils import get_ip_info
 
@@ -13,4 +14,5 @@ def get_features():
     features["default_gateway"] = ip_info[2]
     features["codec_type"] = "cp1252"
     features["reboot_command"] = "shutdown -r -t 1"
+    multiprocessing.freeze_support()
     return features

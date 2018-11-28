@@ -1,5 +1,7 @@
 import codecs
 import warnings
+from multiprocessing import Queue
+
 import vulners
 from typing import List, Dict
 from audit.core.core import shell_command
@@ -60,11 +62,14 @@ class DarwinPacketManager(PacketManager):
             packages.append(Package(name, version.replace(",", ".")))
         return packages
 
-    def get_vulnerabilities(self) -> Dict[Package, List[Vulnerability]]:
+    def get_vulnerabilities(self, queue: Queue) -> Dict[Package, List[Vulnerability]]:
+        queue.put("getting installed packets")
         packages = self.get_installed_packets()
         packages.append(Package(Environment().os, Environment().system_version.split(".")[0]))
         vulnerabilities = dict()
+        packet_counter = 1
         for packet in packages:
+            queue.put("examined " + str(packet_counter) + "/" + str(len(packages)))
             vulnerabilities[packet] = []
             vulners_api = vulners.Vulners(api_key=Environment().vulners_api_key)
             search = None
@@ -74,15 +79,18 @@ class DarwinPacketManager(PacketManager):
                 except Exception as e:
                     warnings.warn(str(e))
                     search = None
-            search = [search.get(key) for key in search if key not in ['info', 'blog', 'bugbounty']]
-            for type_vulner in search:
-                for vulner in type_vulner:
-                    v = Vulnerability(title=vulner.get("title"),
-                                      score=vulner.get("cvss").get("score"),
-                                      href=vulner.get("href"),
-                                      published=vulner.get("published"),
-                                      last_seen=vulner.get("last_seen"),
-                                      reporter=vulner.get("lastseen"),
-                                      cumulative_fix=vulner.get("cumulative_fix"))
-                    vulnerabilities[packet].append(v)
+            if search != {}:
+                vulnerabilities[packet] = []
+                search = [search.get(key) for key in search if key not in ['info', 'blog', 'bugbounty']]
+                for type_vulner in search:
+                    for vulner in type_vulner:
+                        v = Vulnerability(title=vulner.get("title"),
+                                          score=vulner.get("cvss").get("score"),
+                                          href=vulner.get("href"),
+                                          published=vulner.get("published"),
+                                          last_seen=vulner.get("last_seen"),
+                                          reporter=vulner.get("lastseen"),
+                                          cumulative_fix=vulner.get("cumulative_fix"))
+                        vulnerabilities[packet].append(v)
+            packet_counter +=1
         return vulnerabilities

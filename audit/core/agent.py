@@ -1,12 +1,13 @@
+import json
 import os
 import warnings
 from audit.core.connection import Connection
 from audit.core.core import check_active_processes, cd, get_processes, kill_process, restart, exec_command
-from audit.core.device import retrieve_device_information
+from audit.core.device import device_info
 from audit.core.environment import Environment, define_managers
 from audit.core.file_protocols import get, send
 from audit.core.ip_utils import send_ip
-from audit.core.network import get_ports_open_by_processes, network_analysis, watch_traffic
+from audit.core.network import get_ports_open_by_processes, network_analysis
 from audit.core.port_forwarding import open_port
 from audit.core.upnp import upnp
 
@@ -32,59 +33,193 @@ class Agent:
     def serve_forever(self):
         print("server located on: " + Environment().private_ip + ":" + str(self.port))
         print("port status: " + str(self.isOpen))
+
         while True:
             command = " "
             print("waiting for a connection")
+
             try:
                 self.connection.accept()
                 print(str(self.connection.get_client_address()) + " connected")
-            except:
+            except Exception as e:
+                warnings.warn(str(e))
                 print("insecure connection closed")
+
             if self.connection.has_connection():
+
                 try:
-                    self.connection.send_msg(os.getcwd())
+                    first_response = {"status": True, "data": os.getcwd()}
+                    self.connection.send_msg(self.parse_json(first_response))
+
                     while command != "exit":
                         check_active_processes(self.active_processes)
                         command = self.connection.recv_msg()
+
                         if command.startswith("cd"):
-                            cd(self.connection, command)
+                            """
+                                response =
+                                    {
+                                        "status" : boolean
+                                        "data" : str
+                                    }
+                            """
+                            self.connection.send_msg(self.parse_json(cd(command)))
+
                         elif command.startswith("ps"):
-                            get_processes(self.connection)
+                            """
+                                response =
+                                        {
+                                            "status" : True
+                                            "data" :
+                                                [
+                                                    {
+                                                        "pid": number
+                                                        "name": str
+                                                    },
+                                                ]
+                                        }
+                            """
+                            self.connection.send_msg(self.parse_json(get_processes()))
+
                         elif command.startswith("kill"):
-                            kill_process(self.connection, command)
+                            """
+                                response =
+                                    {
+                                        "status" : boolean
+                                        "data" : str
+                                    }
+                            """
+                            self.connection.send_msg(self.parse_json(kill_process(command)))
+
+                        elif command.startswith("ports"):
+                            """
+                                response =
+                                    {
+                                        "status" : boolean
+                                        "data" : 
+                                            [
+                                                {
+                                                    "port": number
+                                                    "processes":
+                                                        [
+                                                            {
+                                                                "pid": number
+                                                                "name": str
+                                                            },
+                                                        ]
+                                                }   
+                                            ]
+                                    }
+                            """
+                            self.connection.send_msg(self.parse_json(get_ports_open_by_processes()))
+
+                        elif command.startswith("HWinfo"):
+                            """
+                                response =
+                                    {
+                                        "status" : boolean
+                                        "data" : 
+                                            {
+                                                "system": 
+                                                    {
+                                                        "platform":
+                                                        "system_users":
+                                                    }
+                                                "cpu":
+                                                    {
+                                                        "processor": str
+                                                        "architecture": str
+                                                        "cores": str
+                                                        "threads": str
+                                                        "usage": [x | x: str] 
+                                                    }
+                                                "virtual_memory":
+                                                    {
+                                                        "total": str
+                                                        "available": str
+                                                        "used": str
+                                                        "used_percent": str
+                                                    }
+                                                "disks": 
+                                                    [
+                                                        {
+                                                            "device": str
+                                                            "mountpoint": str
+                                                            "format": str
+                                                            "features": str
+                                                            "total": str
+                                                            "used": str
+                                                            "free": str
+                                                            "used_percent": str
+                                                        },
+                                                    ]
+                                                "battery":
+                                                    {
+                                                        "percent": str
+                                                        "remaining_time": str
+                                                        "power": str
+                                                    }    
+                                            }
+                                    }
+                            """
+                            self.connection.send_msg(self.parse_json(device_info()))
+
+                        elif command.startswith("network analysis new"):
+                            """
+                                response =
+                                    {
+                                        "status" : boolean
+                                        "data" : str
+                                    }
+                            """
+                            self.connection.send_msg(self.parse_json(network_analysis(self.active_processes, True)))
+
+                        elif command.startswith("network analysis"):
+                            """
+                                response =
+                                    {
+                                        "status" : boolean
+                                        "data" : str
+                                    }
+                            """
+                            self.connection.send_msg(self.parse_json(network_analysis(self.active_processes, False)))
+
                         elif command.startswith("get"):
                             get(self.connection, command)
+
                         elif command.startswith("send"):
                             try:
                                 send(self.connection, command)
                             except IOError as error:
                                 print(" file not found")
-                        elif command.startswith("disable firewall"):
-                            self.connection.send_msg("not implemented yet")
-                        elif command.startswith("ports"):
-                            get_ports_open_by_processes(self.connection)
-                        elif command.startswith("HWinfo"):
-                            retrieve_device_information(self.connection)
-                        elif command.startswith("help"):
-                            pass  # only in client side, but do-nothing
-                        elif command.startswith("network analysis new"):
-                            network_analysis(self.connection, self.active_processes, True)
-                        elif command.startswith("network analysis"):
-                            network_analysis(self.connection, self.active_processes, False)
+
                         elif command.startswith("upnp devices"):
                             upnp(self.connection)
-                        elif command.startswith("watch traffic"):
-                            watch_traffic(self.connection)
+
                         elif command.startswith("restart"):
                             restart()
+
                         elif command.startswith("firewall"):
                             Environment().firewallManager.start(self.connection)
+
                         elif command.startswith("vulners"):
-                            dictionary = Environment().packetManager.get_vulnerabilities()
-                            self.connection.send_msg(Environment().packetManager.remap_keys(dictionary))
+                            self.connection.send_msg(Environment().packetManager.scan(self.active_processes, False))
+
                         else:
+                            """
+                                response =
+                                    {
+                                        "status" : boolean
+                                            "data" : str
+                                    }
+                            """
                             exec_command(self.connection, command)
-                        self.connection.send_msg(os.getcwd())  # always send CWD
+
                 except Exception as e:
                     warnings.warn(str(e))
                     self.connection.close_connection()
+
+    @staticmethod
+    def parse_json(json_item) -> str:
+        return json.dumps(json_item,sort_keys=True, indent=4)
+

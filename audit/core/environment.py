@@ -12,11 +12,11 @@ class Environment:
             features = get_features()
 
             self.vulners_api_key = "7GY764U8YFNSR30S01QSCX7X8VJ78U28RBXVGNHR0YW8XELGSGKDGCQESKE2W23K"
-            self.base_path = os.getcwd() + "/resources"
+            self.base_path = os.getcwd()
             self.path_certs = get_path_certs(self.base_path)
-            self.path_download_files = self.base_path + "/downloads"
-            self.path_streams = self.base_path + "/streams"
-            self.path_firewall_resources = self.base_path + "/firewall_resources"
+            self.path_download_files = self.base_path + "/resources/downloads"
+            self.path_streams = self.base_path + "/resources/streams"
+            self.path_firewall_resources = self.base_path + "/resources/firewall_resources"
             self.private_ip = features["local_ip"]
             self.public_ip = str(requests.get('https://api.ipify.org').text)
             self.os = features["os"]
@@ -60,7 +60,7 @@ def get_path_certs(base_path):
     if hasattr(sys, "_MEIPASS"):  # Pyinstaller arguments
         return os.path.join(sys._MEIPASS, "certs")
     else:
-        return base_path + "/certs"
+        return base_path + "/resources/certs"
 
 
 def get_features():

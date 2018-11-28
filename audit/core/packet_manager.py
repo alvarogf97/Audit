@@ -1,11 +1,16 @@
 import json
+import multiprocessing
 import os
+import time
 import warnings
+from multiprocessing import Queue
+
 import requests
 from typing import List, Dict
 from abc import abstractmethod
 from audit.core.connection import Connection
-from audit.core.core import shell_command, communicate
+from audit.core.core import shell_command, communicate, restart
+from audit.core.environment import Environment
 
 
 class Package:
@@ -78,29 +83,26 @@ class PacketManager:
         self.path_download_files = path_download_files
         self.applications = applications
         self.dependencies = dependencies
+        self.last_msg = ""
 
     @abstractmethod
     def get_installed_packets(self) -> List[Package]: pass
 
     @abstractmethod
-    def get_vulnerabilities(self) -> Dict[Package, List[Vulnerability]]: pass
+    def get_vulnerabilities(self, queue: Queue) -> Dict[Package, List[Vulnerability]]: pass
 
     # install_package will install package in system
-    # 0:error
-    # 1:installed
-    def install_package(self, connection: Connection, name: str, tab=""):
+    def install_package(self, queue: Queue, name: str):
         cwd = os.getcwd()
         try:
-            connection.send_msg(tab + name + " will be installed on system")
+            queue.put(name + " will be installed on system")
             os.chdir(self.path_download_files)
             url, filename, commands = self.applications[name]
             if name in self.dependencies.keys():
                 # first we need to install dependencies
-                connection.send_msg(tab + "dependencies: " + str(self.dependencies[name]))
+                queue.put("dependencies: " + str(self.dependencies[name]))
                 for dependency in self.dependencies[name]:
-                    result = self.install_package(connection, dependency, tab + "  ")
-                    if result[0] == 0:
-                        raise Exception(result[1])  # elevate exception
+                    self.install_package(queue, dependency)
             requirement = requests.get(url)
             with open(filename, "wb") as f:
                 f.write(requirement.content)
@@ -109,16 +111,17 @@ class PacketManager:
                     os.chdir(command.split("$")[1])
                 else:
                     shell_command(command)
-            stdout, stderr = communicate()
-            if not stderr == "":
-                msg = (0, stderr)
-            else:
-                msg = (1, name + " installed successfully. rebooting system")
+                stdout, stderr = communicate()
+                if stderr == "":
+                    raise Exception
+                else:
+                    queue.put(stdout)
+            restart()
         except Exception as e:
             warnings.warn(str(e))
-            msg = (0, "cannot install " + name)
+            queue.put("fail")
         os.chdir(cwd)
-        return msg
+        return
 
     @staticmethod
     def remap_keys(dictionary: Dict[Package, List[Vulnerability]]):
@@ -126,5 +129,40 @@ class PacketManager:
         for package, vulnerabilities in dictionary.items():
             vulnerabilities_list = [vulner.__serialize__() for vulner in vulnerabilities]
             res.append({"Package": package.__serialize__(), "Vulnerabilities": vulnerabilities_list})
-        res = json.dumps(res, sort_keys=True, indent=4)
-        return res
+        with open(Environment().path_streams + '/vulners.json', 'w') as fp:
+            json.dump(res, fp, sort_keys=True, indent=4)
+        return
+
+    def retrieve_vulners(self, queue: Queue):
+        self.remap_keys(self.get_vulnerabilities(queue))
+
+    def scan(self, processes_active, new: bool):
+        result = ""
+        if "vulners" in processes_active.keys():
+            # communicate with subprocess
+            queue =  processes_active["vulners"][2]
+            result = self.get_queue_msg(queue)
+        elif not os.path.isfile(Environment().path_streams + "/vulners.json") or new:
+            queue = multiprocessing.Queue()
+            vulners = multiprocessing.Process(target=self.retrieve_vulners, args=(queue,))
+            vulners.start()
+            processes_active["vulners"] = (vulners, time.time(), queue)
+            result = "launch scanner"
+            self.last_msg = result
+        else:
+            if not self.last_msg.startswith("output"):
+                with open(Environment().path_streams + "/vulners.json", "r") as f:
+                    output = f.read()
+                result = "output@"+output
+                self.last_msg = result
+            else:
+                result = self.last_msg
+        return result;
+
+    def get_queue_msg(self, queue: Queue):
+        try:
+            last = queue.get(timeout=2)
+            self.last_msg = last
+        except Exception as e:
+            last = self.last_msg
+        return last
