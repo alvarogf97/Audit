@@ -21,6 +21,7 @@ class Environment:
             self.public_ip = str(requests.get('https://api.ipify.org').text)
             self.os = features["os"]
             self.distro = features["distro"]
+            self.distro_name = features["distro_name"]
             self.system_version = features["version"]
             self.default_adapter = features["default_adapter"]
             self.default_gateway = features["default_gateway"]

@@ -33,10 +33,11 @@ class Agent:
     def serve_forever(self):
         print("server located on: " + Environment().private_ip + ":" + str(self.port))
         print("port status: " + str(self.isOpen))
+        request_query = dict()
 
         while True:
-            command = " "
             print("waiting for a connection")
+            request_query["command"] = ""
 
             try:
                 self.connection.accept()
@@ -51,11 +52,11 @@ class Agent:
                     first_response = {"status": True, "data": os.getcwd()}
                     self.connection.send_msg(self.parse_json(first_response))
 
-                    while command != "exit":
+                    while request_query["command"] != "exit":
                         check_active_processes(self.active_processes)
-                        command = self.connection.recv_msg()
+                        request_query = self.parse_string(self.connection.recv_msg())
 
-                        if command.startswith("cd"):
+                        if request_query["command"].startswith("cd"):
                             """
                                 response =
                                     {
@@ -63,9 +64,9 @@ class Agent:
                                         "data" : str
                                     }
                             """
-                            self.connection.send_msg(self.parse_json(cd(command)))
+                            self.connection.send_msg(self.parse_json(cd(request_query["args"])))
 
-                        elif command.startswith("ps"):
+                        elif request_query["command"].startswith("ps"):
                             """
                                 response =
                                         {
@@ -81,7 +82,7 @@ class Agent:
                             """
                             self.connection.send_msg(self.parse_json(get_processes()))
 
-                        elif command.startswith("kill"):
+                        elif request_query["command"].startswith("kill"):
                             """
                                 response =
                                     {
@@ -89,9 +90,9 @@ class Agent:
                                         "data" : str
                                     }
                             """
-                            self.connection.send_msg(self.parse_json(kill_process(command)))
+                            self.connection.send_msg(self.parse_json(kill_process(request_query["args"])))
 
-                        elif command.startswith("ports"):
+                        elif request_query["command"].startswith("ports"):
                             """
                                 response =
                                     {
@@ -113,7 +114,7 @@ class Agent:
                             """
                             self.connection.send_msg(self.parse_json(get_ports_open_by_processes()))
 
-                        elif command.startswith("HWinfo"):
+                        elif request_query["command"].startswith("HWinfo"):
                             """
                                 response =
                                     {
@@ -164,7 +165,7 @@ class Agent:
                             """
                             self.connection.send_msg(self.parse_json(device_info()))
 
-                        elif command.startswith("network analysis new"):
+                        elif request_query["command"].startswith("network analysis new"):
                             """
                                 response =
                                     {
@@ -174,7 +175,7 @@ class Agent:
                             """
                             self.connection.send_msg(self.parse_json(network_analysis(self.active_processes, True)))
 
-                        elif command.startswith("network analysis"):
+                        elif request_query["command"].startswith("network analysis"):
                             """
                                 response =
                                     {
@@ -184,7 +185,7 @@ class Agent:
                             """
                             self.connection.send_msg(self.parse_json(network_analysis(self.active_processes, False)))
 
-                        elif command.startswith("upnp devices"):
+                        elif request_query["command"].startswith("upnp devices"):
                             """
                                 response =
                                     {
@@ -215,7 +216,7 @@ class Agent:
                             """
                             self.connection.send_msg(self.parse_json(upnp_devices_information()))
 
-                        elif command.startswith("upnp exec"):
+                        elif request_query["command"].startswith("upnp exec"):
                             """
                                 response =
                                     {
@@ -223,9 +224,9 @@ class Agent:
                                         "data" : args_out
                                     }
                             """
-                            self.connection.send_msg(self.parse_json(upnp_execute_action(command.split("@")[1])))
+                            self.connection.send_msg(self.parse_json(upnp_execute_action(request_query["args"])))
 
-                        elif command.startswith("vulners"):
+                        elif request_query["command"].startswith("vulners"):
                             """
                                 response =
                                     {
@@ -236,18 +237,18 @@ class Agent:
                             self.connection.send_msg(self.parse_json(
                                 Environment().packetManager.scan(self.active_processes, False)))
 
-                        elif command.startswith("restart"):
-                            restart()
-
-                        elif command.startswith("firewall"):
+                        elif request_query["command"].startswith("firewall"):
                             Environment().firewallManager.start(self.connection)
 
-                        elif command.startswith("get"):
-                            get(self.connection, command)
+                        elif request_query["command"].startswith("restart"):
+                            restart()
 
-                        elif command.startswith("send"):
+                        elif request_query["command"].startswith("get"):
+                            get(self.connection, request_query["command"])
+
+                        elif request_query["command"].startswith("send"):
                             try:
-                                send(self.connection, command)
+                                send(self.connection, request_query["command"])
                             except IOError as error:
                                 warnings.warn(str(error))
                                 print(" file not found")
@@ -260,7 +261,7 @@ class Agent:
                                             "data" : str
                                     }
                             """
-                            self.connection.send_msg(self.parse_json(exec_command(command)))
+                            self.connection.send_msg(self.parse_json(exec_command(request_query["command"])))
 
                 except Exception as e:
                     warnings.warn(str(e))
@@ -269,3 +270,7 @@ class Agent:
     @staticmethod
     def parse_json(json_item) -> str:
         return json.dumps(json_item, sort_keys=True, indent=4)
+
+    @staticmethod
+    def parse_string(query_str: str):
+        return json.loads(query_str)

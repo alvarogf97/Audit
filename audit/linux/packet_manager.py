@@ -36,7 +36,7 @@ class LinuxPacketManager(PacketManager):
 
 def get_suitable_packet_manager(path_download_files: str) -> LinuxPacketManager:
     sys_name = Environment().distro
-    if sys_name == "ubuntu" or sys_name == "debian":
+    if sys_name == "debian":
         from audit.linux.distributions.debian_based import DebianPacketManager
         return DebianPacketManager(path_download_files)
     elif sys_name == "arch":

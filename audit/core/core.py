@@ -55,21 +55,15 @@ def communicate():
 
 
 # cd change current working directory
-def cd(command: str):
+def cd(new_cwd: str):
     result = dict()
-    splitted = command.split(" ", 1)
-    if len(splitted) > 1:
-        new_cwd = splitted[1]
-        try:
-            os.chdir(new_cwd)
-            result["data"] = os.getcwd()
-            result["status"] = True
-        except Exception as e:
-            warnings.warn(str(e))
-            result["data"] = "the directory: " + new_cwd + " doesn't exists"
-            result["status"] = False
-    else:
-        result["data"] = "no arguments specified for cd"
+    try:
+        os.chdir(new_cwd)
+        result["data"] = os.getcwd()
+        result["status"] = True
+    except Exception as e:
+        warnings.warn(str(e))
+        result["data"] = "the directory: " + new_cwd + " doesn't exists"
         result["status"] = False
     return result
 
@@ -86,23 +80,18 @@ def get_processes():
 
 
 # kill_process: kill process by pid
-def kill_process(command: str):
+def kill_process(pid: str):
     result = dict()
-    splitted = command.split(" ", 1)
-    if len(splitted) > 1:
-        try:
-            pid = int(splitted[1])
-            process = psutil.Process(pid)
-            process.kill()
-            result["status"] = True
-            result["data"] = "Killed successfully"
-        except Exception as e:
-            result["status"] = False
-            result["data"] = "Invalid arguments"
-            warnings.warn(str(e))
-    else:
+    try:
+        pid = int(pid)
+        process = psutil.Process(pid)
+        process.kill()
+        result["status"] = True
+        result["data"] = "Killed successfully"
+    except Exception as e:
         result["status"] = False
         result["data"] = "Invalid arguments"
+        warnings.warn(str(e))
     return result
 
 

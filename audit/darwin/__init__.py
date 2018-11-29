@@ -6,6 +6,7 @@ def get_features():
     features = dict()
     features["os"] = "Darwin"
     features["distro"] = None
+    features["distro_name"] = None
     features["version"] = platform.version()
     ip_info = get_ip_info()
     features["local_ip"] = ip_info[0]
