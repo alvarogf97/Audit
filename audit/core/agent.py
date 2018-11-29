@@ -238,7 +238,14 @@ class Agent:
                                 Environment().packetManager.scan(self.active_processes, False)))
 
                         elif request_query["command"].startswith("firewall"):
-                            Environment().firewallManager.start(self.connection)
+                            """
+                                response =
+                                    {
+                                        "status" : boolean
+                                        "data" : str or rules
+                                    }
+                            """
+                            Environment().firewallManager.execute_firewall_action(request_query["command"],request_query["args"])
 
                         elif request_query["command"].startswith("restart"):
                             restart()

@@ -1,29 +1,34 @@
-from audit.core.connection import Connection
 from audit.core.firewall_manager import FirewallManager
 
 
 class DarwinFirewallManager(FirewallManager):
 
-    def start(self, connection: Connection):
+    def firewall_descriptor(self):
         pass
 
-    def add_rule(self, connection: Connection):
+    def add_chain(self, args):
         pass
 
-    def remove_rule(self, connection: Connection):
+    def remove_chain(self, args):
         pass
 
-    def get_rules(self, connection: Connection):
+    def add_rule(self, args):
         pass
 
-    def export_firewall(self, connection: Connection):
+    def remove_rule(self, args):
         pass
 
-    def import_firewall(self, connection: Connection):
+    def get_rules(self):
         pass
 
-    def disable(self, connection: Connection):
+    def export_firewall(self):
         pass
 
-    def enable(self, connection: Connection):
+    def import_firewall(self, args):
+        pass
+
+    def disable(self):
+        pass
+
+    def enable(self):
         pass
