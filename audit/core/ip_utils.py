@@ -13,12 +13,12 @@ def get_ip_info():
     return ip, ip_device, ip_gateway
 
 
-# send_IP sended the IP(private and public) and machine name via e-mail
-def send_ip(port):
+# send_IP: sended the IP(private and public) and machine name via e-mail
+def send_ip(port, mail):
     gmail_user = 'reaperanalyzer@gmail.com'
     gmail_password = '@dminth0r'
     sent_from = gmail_user
-    to = ['reaperanalyzer@gmail.com']
+    to = [mail]
     subject = 'IP'
     body = "Local IP: " + Environment().private_ip \
            + " Public IP: " + Environment().public_ip \

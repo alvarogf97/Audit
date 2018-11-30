@@ -9,14 +9,25 @@ class Environment:
     class __Environment:
         def __init__(self):
 
-            features = get_features()
-
             self.vulners_api_key = "7GY764U8YFNSR30S01QSCX7X8VJ78U28RBXVGNHR0YW8XELGSGKDGCQESKE2W23K"
             self.base_path = os.getcwd()
             self.path_certs = get_path_certs(self.base_path)
             self.path_download_files = self.base_path + "/resources/downloads"
             self.path_streams = self.base_path + "/resources/streams"
             self.path_firewall_resources = self.base_path + "/resources/firewall_resources"
+
+            # create path dirs
+            if not os.path.exists(self.base_path+"/resources"):
+                os.mkdir(self.base_path+"/resources")
+            if not os.path.exists(self.path_streams):
+                os.mkdir(self.path_streams)
+            if not os.path.exists(self.path_download_files):
+                os.mkdir(self.path_download_files)
+            if not os.path.exists(self.path_firewall_resources):
+                os.mkdir(self.path_firewall_resources)
+
+            features = get_features()
+
             self.private_ip = features["local_ip"]
             self.public_ip = str(requests.get('https://api.ipify.org').text)
             self.os = features["os"]
@@ -32,16 +43,6 @@ class Environment:
             # managers
             self.packetManager = None
             self.firewallManager = None
-
-            # create path dirs
-            if not os.path.exists(self.base_path):
-                os.mkdir(self.base_path)
-            if not os.path.exists(self.path_streams):
-                os.mkdir(self.path_streams)
-            if not os.path.exists(self.path_download_files):
-                os.mkdir(self.path_download_files)
-            if not os.path.exists(self.path_firewall_resources):
-                os.mkdir(self.path_firewall_resources)
 
     instance = None
 

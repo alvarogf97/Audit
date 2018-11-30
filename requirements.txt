@@ -1,4 +1,6 @@
 upnpclient
+wxpython
+pyinstaller
 ifaddr
 dpkt
 requests

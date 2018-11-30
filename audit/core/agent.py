@@ -1,6 +1,8 @@
 import json
 import os
+import socket
 import warnings
+from multiprocessing import Queue
 from audit.core.connection import Connection
 from audit.core.core import check_active_processes, cd, get_processes, kill_process, restart, exec_command
 from audit.core.device import device_info
@@ -14,9 +16,12 @@ from audit.core.upnp import upnp_devices_information, upnp_execute_action
 
 class Agent:
 
-    def __init__(self, port, open_on_router=False, send_mail=False):
+    def __init__(self, port, queue: Queue, open_on_router=False, send_mail=False, mail=""):
+
+        self.queue = queue
 
         if open_on_router:
+            self.queue.put("logger_info@Trying to open port on router...")
             self.isOpen, self.time_port, self.port = open_port(port)
         else:
             self.isOpen = False
@@ -24,27 +29,30 @@ class Agent:
             self.port = port
 
         if send_mail:
-            send_ip(self.port)
+            self.queue.put("logger_info@Sending email to " + mail)
+            send_ip(self.port, mail)
 
         self.connection = Connection(port)
         self.active_processes = dict()
         define_managers()
 
     def serve_forever(self):
-        print("server located on: " + Environment().private_ip + ":" + str(self.port))
-        print("port status: " + str(self.isOpen))
+        self.queue.put("server_info@server located on: " + Environment().private_ip + ":" + str(self.port))
+        self.queue.put("server_info@public ip: " + Environment().public_ip)
+        self.queue.put("server_info@port status: " + str(self.isOpen))
         request_query = dict()
 
         while True:
-            print("waiting for a connection")
+            self.queue.put("logger_info@waiting for a connection")
             request_query["command"] = ""
 
             try:
                 self.connection.accept()
-                print(str(self.connection.get_client_address()) + " connected")
+                self.queue.put("logger_info@" + str(self.connection.get_client_address()) + " connected with name: "
+                               + socket.gethostbyaddr(self.connection.get_client_address()[0])[0])
             except Exception as e:
                 warnings.warn(str(e))
-                print("insecure connection closed")
+                self.queue.put("logger_info@insecure connection closed")
 
             if self.connection.has_connection():
 
@@ -245,7 +253,8 @@ class Agent:
                                         "data" : str or rules
                                     }
                             """
-                            Environment().firewallManager.execute_firewall_action(request_query["command"],request_query["args"])
+                            Environment().firewallManager.execute_firewall_action(request_query["command"],
+                                                                                  request_query["args"])
 
                         elif request_query["command"].startswith("restart"):
                             restart()
@@ -274,6 +283,9 @@ class Agent:
                     warnings.warn(str(e))
                     self.connection.close_connection()
 
+    def close(self):
+        self.connection.close()
+
     @staticmethod
     def parse_json(json_item) -> str:
         return json.dumps(json_item, sort_keys=True, indent=4)
@@ -281,3 +293,4 @@ class Agent:
     @staticmethod
     def parse_string(query_str: str):
         return json.loads(query_str)
+

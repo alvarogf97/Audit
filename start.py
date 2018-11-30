@@ -1,3 +1,7 @@
+import multiprocessing
+import wx
+from audit.gui.mainPanel import MainPanel, get_path_icon
+
 """
  supported os:
     windows 7,8,10
@@ -9,8 +13,14 @@
 
 """
 
-from audit.core.agent import Agent
-
 if __name__ == "__main__":
-    agent = Agent(5000)
-    agent.serve_forever()
+    multiprocessing.freeze_support()
+    app = wx.App(False)
+    frame = wx.Frame(None, title='Audit')
+    frame.SetMinSize((500, 430))
+    MainPanel(frame)
+    icon = wx.Icon()
+    icon.CopyFromBitmap(wx.Bitmap(get_path_icon() + "/icon.ico", wx.BITMAP_TYPE_ANY))
+    frame.SetIcon(icon)
+    frame.Show()
+    app.MainLoop()

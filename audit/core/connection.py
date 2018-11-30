@@ -26,6 +26,10 @@ class Connection:
     def close_connection(self):
         self.connection.close()
 
+    def close(self):
+        self.connection.close()
+        self.sock.close()
+
     def send_msg(self, msg):
         # Prefix each message with a 4-byte length (network byte order)
         msg = msg.encode('utf-8')
