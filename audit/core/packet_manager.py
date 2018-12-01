@@ -48,7 +48,7 @@ class Vulnerability:
         self.reporter = reporter
         self.cumulative_fix = cumulative_fix
         if self.cumulative_fix is None:
-            self.cumulative_fix = "Wait for upgrade"
+            self.cumulative_fix = "Upgrade"
 
     def __eq__(self, other):
         res = False
