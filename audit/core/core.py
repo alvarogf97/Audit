@@ -90,7 +90,7 @@ def kill_process(pid: str):
         result["data"] = "Killed successfully"
     except Exception as e:
         result["status"] = False
-        result["data"] = "Invalid arguments"
+        result["data"] = "Cannot kill it!"
         warnings.warn(str(e))
     return result
 

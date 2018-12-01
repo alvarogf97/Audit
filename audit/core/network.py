@@ -16,13 +16,16 @@ def get_ports_open_by_processes():
     result["status"] = True
     process_ports = dict()
     for x in psutil.net_connections():
-        if x.laddr.port in process_ports.keys() \
-                and not process_ports.get(x.laddr.port) is None \
-                and x.pid not in process_ports.get(x.laddr.port) \
-                and (x.pid, psutil.Process(x.pid).name()) not in process_ports[x.laddr.port]:
-            process_ports[x.laddr.port].append({"pid": x.pid, "name": psutil.Process(x.pid).name()})
-        else:
-            process_ports[x.laddr.port] = [{"pid": x.pid, "name": psutil.Process(x.pid).name()}]
+        try:
+            if x.laddr.port in process_ports.keys() \
+                    and not process_ports.get(x.laddr.port) is None \
+                    and x.pid not in process_ports.get(x.laddr.port) \
+                    and ({"pid": x.pid, "name": psutil.Process(x.pid).name()}) not in process_ports[x.laddr.port]:
+                process_ports[x.laddr.port].append({"pid": x.pid, "name": psutil.Process(x.pid).name()})
+            else:
+                process_ports[x.laddr.port] = [{"pid": x.pid, "name": psutil.Process(x.pid).name()}]
+        except Exception as e:
+            warnings.warn(str(e))
     result["data"] = [{"port": port, "processes": processes} for port, processes in sorted(process_ports.items())]
     return result
 

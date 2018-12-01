@@ -1,6 +1,5 @@
 import json
 import os
-import socket
 import warnings
 from multiprocessing import Queue
 from audit.core.connection import Connection
@@ -48,8 +47,7 @@ class Agent:
 
             try:
                 self.connection.accept()
-                self.queue.put("logger_info@" + str(self.connection.get_client_address()) + " connected with name: "
-                               + socket.gethostbyaddr(self.connection.get_client_address()[0])[0])
+                self.queue.put("logger_info@" + str(self.connection.get_client_address()) + " connected")
             except Exception as e:
                 warnings.warn(str(e))
                 self.queue.put("logger_info@insecure connection closed")
@@ -152,14 +150,16 @@ class Agent:
                                                 "disks": 
                                                     [
                                                         {
-                                                            "device": str
-                                                            "mountpoint": str
-                                                            "format": str
-                                                            "features": str
-                                                            "total": str
-                                                            "used": str
-                                                            "free": str
-                                                            "used_percent": str
+                                                            "device_name": 
+                                                                {
+                                                                    "mountpoint": str
+                                                                    "format": str
+                                                                    "features": str
+                                                                    "total": str
+                                                                    "used": str
+                                                                    "free": str
+                                                                    "used_percent": str
+                                                                }
                                                         },
                                                     ]
                                                 "battery":
