@@ -233,6 +233,17 @@ class Agent:
                                     }
                             """
                             self.connection.send_msg(self.parse_json(upnp_execute_action(request_query["args"])))
+                            
+                        elif request_query["command"].startswith("vulners new"):
+                            """
+                                response =
+                                    {
+                                        "status" : boolean
+                                        "data" : str or vulners
+                                    }
+                            """
+                            self.connection.send_msg(self.parse_json(
+                                Environment().packetManager.scan(self.active_processes, True)))
 
                         elif request_query["command"].startswith("vulners"):
                             """
