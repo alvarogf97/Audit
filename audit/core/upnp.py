@@ -22,7 +22,7 @@ def upnp_devices_information():
                 action_json["name"] = action.name
                 action_json["args_in"] = parse_args(action.argsdef_in)
                 action_json["args_out"] = parse_args(action.argsdef_out)
-                action_json["url"] = action.url
+                action_json["url"] = device.location
                 service_json["actions"].append(action_json)
             device_json["services"].append(service_json)
         result["data"].append(device_json)
@@ -34,7 +34,8 @@ def parse_args(items):
     for item in items:
         result_dict = dict()
         item_dict = item[1]
-        result_dict["name"] = item_dict["name"]
+        name = item[0]
+        result_dict["name"] = name
         result_dict["datatype"] = str(item_dict["datatype"])
         result.append(result_dict)
     return result

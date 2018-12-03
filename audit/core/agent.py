@@ -233,7 +233,7 @@ class Agent:
                                     }
                             """
                             self.connection.send_msg(self.parse_json(upnp_execute_action(request_query["args"])))
-                            
+
                         elif request_query["command"].startswith("vulners new"):
                             """
                                 response =
