@@ -70,7 +70,6 @@ class DarwinPacketManager(PacketManager):
         packet_counter = 1
         for packet in packages:
             queue.put("examined " + str(packet_counter) + "/" + str(len(packages)))
-            vulnerabilities[packet] = []
             vulners_api = vulners.Vulners(api_key=Environment().vulners_api_key)
             search = None
             while search is None:

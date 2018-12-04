@@ -63,6 +63,12 @@ def upnp_execute_action(information):
         i += 1
 
     args_in = information["args_in"]
+    for arg, value in args_in.items():
+       try:
+           args_in[arg] = int(value)
+       except Exception as e:
+           # stub
+           warnings.warn(str(e))
 
     try:
         action_exec = action(args_in)
@@ -73,5 +79,4 @@ def upnp_execute_action(information):
         result["status"] = False
         result["data"] = str(e)
 
-    print(result)
     return result
