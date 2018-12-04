@@ -41,9 +41,8 @@ def parse_args(items):
     return result
 
 
-def upnp_execute_action(information: str):
+def upnp_execute_action(information):
     result = dict()
-    information = json.loads(information)
     device = upnpclient.Device(information["location"])
     service_id = information["service"]
     action_name = information["action"]
@@ -67,11 +66,12 @@ def upnp_execute_action(information: str):
 
     try:
         action_exec = action(args_in)
-        result["status"] = True
         result["data"] = action_exec
+        result["status"] = True
     except Exception as e:
         warnings.warn(str(e))
         result["status"] = False
         result["data"] = str(e)
 
+    print(result)
     return result
