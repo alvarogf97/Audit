@@ -46,25 +46,29 @@ class Agent:
         request_query = dict()
 
         while True:
+            error = False
             self.queue.put("logger_info@waiting for a connection")
             request_query["command"] = ""
 
             try:
                 self.connection.accept()
-
                 first_response = {"status": True, "data": os.getcwd()}
                 self.connection.send_msg(self.parse_json(first_response))
                 logging_query = self.parse_string(self.connection.recv_msg())
                 self.current_user = User.check_user(name=logging_query["name"], password=logging_query["password"])
                 if self.current_user is None:
                     raise Exception
+                self.connection.send_msg(self.parse_json(first_response))
                 self.queue.put("logger_info@ User: " + self.current_user.name +
                                " from: " + str(self.connection.get_client_address()) + " connected")
             except Exception as e:
+                if self.connection.has_connection():
+                    self.connection.send_msg(self.parse_json({"satus": False, "data": os.getcwd()}))
+                error = True
                 warnings.warn(str(e))
                 self.queue.put("logger_info@insecure connection closed")
 
-            if self.connection.has_connection():
+            if self.connection.has_connection() and not error:
 
                 try:
 
