@@ -1,6 +1,7 @@
 import json
 import os
 import warnings
+from audit.database.user import User, init_db
 from multiprocessing import Queue
 from audit.core.connection import Connection
 from audit.core.core import check_active_processes, cd, get_processes, kill_process, restart, exec_command
@@ -33,6 +34,9 @@ class Agent:
 
         self.connection = Connection(port)
         self.active_processes = dict()
+        self.current_user = None
+
+        init_db()
         define_managers()
 
     def serve_forever(self):
@@ -47,7 +51,15 @@ class Agent:
 
             try:
                 self.connection.accept()
-                self.queue.put("logger_info@" + str(self.connection.get_client_address()) + " connected")
+
+                first_response = {"status": True, "data": os.getcwd()}
+                self.connection.send_msg(self.parse_json(first_response))
+                logging_query = self.parse_string(self.connection.recv_msg())
+                self.current_user = User.check_user(name=logging_query["name"], password=logging_query["password"])
+                if self.current_user is None:
+                    raise Exception
+                self.queue.put("logger_info@ User: " + self.current_user.name +
+                               " from: " + str(self.connection.get_client_address()) + " connected")
             except Exception as e:
                 warnings.warn(str(e))
                 self.queue.put("logger_info@insecure connection closed")
@@ -55,8 +67,6 @@ class Agent:
             if self.connection.has_connection():
 
                 try:
-                    first_response = {"status": True, "data": os.getcwd()}
-                    self.connection.send_msg(self.parse_json(first_response))
 
                     while request_query["command"] != "exit":
                         check_active_processes(self.active_processes)

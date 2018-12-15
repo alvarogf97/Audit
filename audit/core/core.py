@@ -4,6 +4,8 @@ import subprocess
 import sys
 import warnings
 import psutil
+from ftfy import fix_text
+
 from audit.core.environment import Environment
 
 
@@ -51,7 +53,7 @@ def communicate():
     stderr = stderr_file.read()
     stdout_file.close()
     stderr_file.close()
-    return stdout, stderr
+    return fix_text(stdout), fix_text(stderr)
 
 
 # cd change current working directory

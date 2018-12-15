@@ -5,13 +5,14 @@ import warnings
 import wx
 import re
 from queue import Queue
-
 from audit.core.agent import Agent
+from audit.gui.userPanel import UserPanel
 
 
 class MainPanel(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
+        self.parent = parent
         self.start_button = wx.Button(self, label="Start", pos=(10, 10), size=(151, 30))
         self.port_label = wx.StaticText(self, label="Port:", pos=(10, 52))
         self.port_edit = wx.TextCtrl(self, value="5000", pos=(60, 50), size=(100, 20))
@@ -19,11 +20,13 @@ class MainPanel(wx.Panel):
         self.email_edit = wx.TextCtrl(self, value="", pos=(60, 90), size=(100, 20))
         self.open_port_checkbox = wx.CheckBox(self, label="Open router port", pos=(10, 130))
         self.send_email_checkbox = wx.CheckBox(self, label="Send email", pos=(150, 130))
+        self.user_button = wx.Button(self, label="Users", pos=(320,125), size=(151,30))
         self.server_info = wx.TextCtrl(self, pos=(170, 10), size=(300, 105), style=wx.TE_MULTILINE | wx.TE_READONLY)
         self.label = wx.StaticText(self, label="Server log:", pos=(227, 160))
         self.logger = wx.TextCtrl(self, pos=(10, 180), size=(460, 200), style=wx.TE_MULTILINE | wx.TE_READONLY)
 
         self.Bind(wx.EVT_BUTTON, self.on_click_start_button, self.start_button)
+        self.Bind(wx.EVT_BUTTON, self.on_click_user_button, self.user_button)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.on_close)
         self.Bind(wx.EVT_CHECKBOX, self.open_port_checkbox_click, self.open_port_checkbox)
         self.Bind(wx.EVT_CHECKBOX, self.send_email_checkbox_click, self.send_email_checkbox)
@@ -37,6 +40,13 @@ class MainPanel(wx.Panel):
         self.queue = None
         self.is_open_check = False
         self.is_send_check = False
+
+        self.user_frame = wx.Frame(None, title='Users')
+        self.user_frame.SetMinSize((380, 360))
+        self.user_panel = UserPanel(self.user_frame, self)
+        icon = wx.Icon()
+        icon.CopyFromBitmap(wx.Bitmap(get_path_icon() + "/icon.ico", wx.BITMAP_TYPE_ANY))
+        self.user_frame.SetIcon(icon)
 
     def update_server_info(self, msg):
         self.server_info.AppendText(msg + "\n")
@@ -63,6 +73,7 @@ class MainPanel(wx.Panel):
                 self.started = True
                 self.queue = queue
                 self.start_button.SetLabel("Stop")
+                self.user_button.Enable(False)
             else:
                 self.update_logger("wrong inputs")
         else:
@@ -71,6 +82,7 @@ class MainPanel(wx.Panel):
             self.agent_process.terminate()
             self.queue.close()
             self.queue = None
+            self.user_button.Enable(True)
 
     def on_close(self, event):
         if self.agent_process is not None and self.agent_process.is_alive():
@@ -115,6 +127,23 @@ class MainPanel(wx.Panel):
             result = False
 
         return result
+
+    def on_click_user_button(self, event):
+        self.parent.Hide()
+        self.user_frame.Show()
+
+    def close_user_panel(self, event):
+        self.user_frame.Hide()
+        self.parent.Show()
+
+    def on_close_user_panel(self, event):
+        self.user_frame = wx.Frame(None, title='Users')
+        self.user_frame.SetMinSize((500, 430))
+        self.user_panel = UserPanel(self.user_frame, self)
+        icon = wx.Icon()
+        icon.CopyFromBitmap(wx.Bitmap(get_path_icon() + "/icon.ico", wx.BITMAP_TYPE_ANY))
+        self.user_frame.SetIcon(icon)
+        self.parent.Show()
 
 
 def start_agent(queue: Queue, port: int, open_on_router: bool, send_mail: bool, mail: str):

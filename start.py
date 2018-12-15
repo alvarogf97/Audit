@@ -9,6 +9,7 @@ from audit.gui.mainPanel import MainPanel, get_path_icon
         - debian based distributions
         - rhel based distribution
         - arch based distributions
+        - SuSe based distributions
     MacOs X
 
 """
