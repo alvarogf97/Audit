@@ -1,6 +1,7 @@
 import json
 import os
 import warnings
+import socket
 from audit.database.user import User, init_db
 from multiprocessing import Queue
 from audit.core.connection import Connection
@@ -59,8 +60,11 @@ class Agent:
                 if self.current_user is None:
                     raise Exception
                 self.connection.send_msg(self.parse_json(first_response))
-                self.queue.put("logger_info@ User: " + self.current_user.name +
+                self.queue.put("logger_info@User: " + self.current_user.name +
                                " from: " + str(self.connection.get_client_address()) + " connected")
+            except TypeError as e:
+                warnings.warn(str(e))
+                self.queue.put("logger_info@chcked server status")
             except Exception as e:
                 if self.connection.has_connection():
                     self.connection.send_msg(self.parse_json({"satus": False, "data": os.getcwd()}))
