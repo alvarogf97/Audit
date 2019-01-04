@@ -110,7 +110,6 @@ class LinuxFirewallManager(FirewallManager):
         table.commit()
         table.autocommit = True
 
-    @property
     def get_rules(self):
         result = dict()
         result["status"] = True

@@ -1,7 +1,6 @@
 import json
 import os
 import warnings
-import socket
 from audit.database.user import User, init_db
 from multiprocessing import Queue
 from audit.core.connection import Connection
@@ -282,8 +281,9 @@ class Agent:
                                         "data" : str or rules
                                     }
                             """
-                            Environment().firewallManager.execute_firewall_action(request_query["command"],
-                                                                                  request_query["args"])
+                            self.connection.send_msg(self.parse_json(
+                                Environment().firewallManager.execute_firewall_action(request_query["command"],
+                                                                                      request_query["args"])))
 
                         elif request_query["command"].startswith("restart"):
                             restart()

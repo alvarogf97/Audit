@@ -5,7 +5,6 @@ import sys
 import warnings
 import psutil
 from ftfy import fix_text
-
 from audit.core.environment import Environment
 
 
