@@ -7,6 +7,9 @@ from audit.core.firewall_manager import FirewallManager
 
 class LinuxFirewallManager(FirewallManager):
 
+    def __init__(self):
+        super().__init__()
+
     def firewall_descriptor(self):
         result = dict()
         result["status"] = True
@@ -123,11 +126,8 @@ class LinuxFirewallManager(FirewallManager):
         result["data"] = result_str
         return result
 
-    def export_firewall(self):
-        time_info = datetime.datetime.now()
-        filename = str(time_info.year) + "_" + str(time_info.month) + "_" \
-                   + str(time_info.day) + "_" + str(time_info.hour) + "_" \
-                   + str(time_info.minute) + ".wfw"
+    def export_firewall(self, args):
+        filename = args["filename"]
         command = "iptables-save > \"" + Environment().path_firewall_resources + "/" + filename + "\""
         return exec_command(command)
 
@@ -151,3 +151,9 @@ class LinuxFirewallManager(FirewallManager):
     def enable(self):
         command = "iptables-restore < \"" + Environment().path_firewall_resources + "/last\""
         return exec_command(command)
+
+    def status(self):
+        pass
+
+    def parse_rules(self, string):
+        pass

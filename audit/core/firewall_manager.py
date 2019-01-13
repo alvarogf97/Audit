@@ -1,9 +1,14 @@
 import os
 from abc import abstractmethod
+
 from audit.core.environment import Environment
 
 
 class FirewallManager:
+
+    def __init__(self):
+        self.rules = None
+        self.chains = None
 
     @abstractmethod
     def firewall_descriptor(self):
@@ -30,7 +35,7 @@ class FirewallManager:
         pass
 
     @abstractmethod
-    def export_firewall(self):
+    def export_firewall(self, args):
         pass
 
     @abstractmethod
@@ -45,6 +50,14 @@ class FirewallManager:
     def enable(self):
         pass
 
+    @abstractmethod
+    def status(self):
+        pass
+
+    @abstractmethod
+    def parse_rules(self, string):
+        pass
+
     def execute_firewall_action(self, command: str, args):
         if command.startswith("firewall add rule"):
             return self.add_rule(args)
@@ -53,7 +66,7 @@ class FirewallManager:
         elif command.startswith("firewall get rules"):
             return self.get_rules()
         elif command.startswith("firewall export"):
-            return self.export_firewall()
+            return self.export_firewall(args)
         elif command.startswith("firewall import"):
             return self.import_firewall(args)
         elif command.startswith("firewall disable"):
@@ -77,4 +90,24 @@ class FirewallManager:
         result["status"] = True
         result["data"] = [f for f in os.listdir(Environment().path_firewall_resources)
                           if os.path.isfile(os.path.join(Environment().path_firewall_resources, f))]
+        return result
+
+
+class Rule:
+
+    def __init__(self, number, **kwargs):
+        self.number = number
+        self.kwargs = kwargs
+
+    def to_json(self):
+        result = dict()
+        result["number"] = self.number
+        result.update(self.kwargs)
+        return result
+
+    @staticmethod
+    def list_to_json(rule_list):
+        result = []
+        for rule in rule_list:
+            result.append(rule.to_json())
         return result
