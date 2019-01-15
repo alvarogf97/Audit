@@ -1,4 +1,3 @@
-import datetime
 import iptc
 from audit.core.core import exec_command, shell_command
 from audit.core.environment import Environment
@@ -157,3 +156,6 @@ class LinuxFirewallManager(FirewallManager):
 
     def parse_rules(self, string):
         pass
+
+    def is_compatible(self):
+        return True

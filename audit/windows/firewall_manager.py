@@ -10,7 +10,7 @@ class WindowsFirewallManager(FirewallManager):
 
     def firewall_descriptor(self):
         result = dict()
-        result["status"] = True
+        result["status"] = self.is_compatible()
         result["data"] = [
             {
                 "name": "add rule",
@@ -54,6 +54,7 @@ class WindowsFirewallManager(FirewallManager):
                 "args": {}
             }
         ]
+        result["fw_status"] = self.status()
         return result
 
     def add_chain(self, args):
@@ -111,6 +112,9 @@ class WindowsFirewallManager(FirewallManager):
         else:
             result["status"] = False
         return result
+
+    def is_compatible(self):
+        return True
 
     def parse_rules(self, string):
         rules = []

@@ -41,3 +41,6 @@ class DarwinFirewallManager(FirewallManager):
 
     def parse_rules(self, string):
         pass
+
+    def is_compatible(self):
+        return True

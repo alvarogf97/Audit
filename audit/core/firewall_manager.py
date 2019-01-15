@@ -58,6 +58,10 @@ class FirewallManager:
     def parse_rules(self, string):
         pass
 
+    @abstractmethod
+    def is_compatible(self):
+        pass
+
     def execute_firewall_action(self, command: str, args):
         if command.startswith("firewall add rule"):
             return self.add_rule(args)
