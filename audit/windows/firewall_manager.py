@@ -21,37 +21,49 @@ class WindowsFirewallManager(FirewallManager):
                     "protocol": "",
                     "local port": "",
                     "program": "",
-                }
+                },
+                "show": True
             },
             {
                 "name": "remove rule",
                 "args": {
                     "name": ""
-                }
+                },
+                "show": False
             },
             {
-                "name": "get rules",
-                "args": {}
+                "name": "view rules",
+                "args": {},
+                "show": True
             },
             {
                 "name": "export setting",
                 "args": {
                     "filename": ""
-                }
+                },
+                "show": True
             },
             {
                 "name": "import settings",
                 "args": {
                     "file": ""
-                }
+                },
+                "show": True
             },
             {
                 "name": "disable",
-                "args": {}
+                "args": {},
+                "show": True
             },
             {
                 "name": "enable",
-                "args": {}
+                "args": {},
+                "show": True
+            },
+            {
+                "name": "status",
+                "args": {},
+                "show": False
             }
         ]
         result["fw_status"] = self.status()
@@ -145,22 +157,19 @@ class WindowsFirewallManager(FirewallManager):
         cursor = 1
         status_data = dict()
 
-        status_domain_name = lines[cursor].strip()
         cursor += 2
         status_domain = lines[cursor].split()[1]
-        status_data[status_domain_name] = status_domain
+        status_data["domain"] = True if status_domain.lower().startswith("a") else False
         cursor += 2
 
-        status_public_name = lines[cursor].strip()
         cursor += 2
         status_public = lines[cursor].split()[1]
-        status_data[status_public_name] = status_public
+        status_data["public"] = True if status_public.lower().startswith("a") else False
         cursor += 2
 
-        status_private_name = lines[cursor].strip()
         cursor += 2
         status_private = lines[cursor].split()[1]
-        status_data[status_private_name] = status_private
+        status_data["private"] = True if status_private.lower().startswith("a") else False
         cursor += 2
 
         return status_data

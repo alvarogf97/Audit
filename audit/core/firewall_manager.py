@@ -83,6 +83,8 @@ class FirewallManager:
             return self.add_chain(args)
         elif command.startswith("firewall remove chain"):
             return self.remove_chain(args)
+        elif command.startswith("firewall status"):
+            return self.status()
         else:
             result = dict()
             result["status"] = False
