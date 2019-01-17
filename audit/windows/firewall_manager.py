@@ -22,48 +22,56 @@ class WindowsFirewallManager(FirewallManager):
                     "local port": "",
                     "program": "",
                 },
-                "show": True
+                "show": True,
+                "command": "firewall add rule"
             },
             {
                 "name": "remove rule",
                 "args": {
                     "name": ""
                 },
-                "show": False
+                "show": False,
+                "command": "firewall remove rule"
             },
             {
                 "name": "view rules",
                 "args": {},
-                "show": True
+                "show": True,
+                "command": "firewall get rules"
             },
             {
                 "name": "export setting",
                 "args": {
                     "filename": ""
                 },
-                "show": True
+                "show": True,
+                "command": "firewall export"
             },
             {
                 "name": "import settings",
                 "args": {
                     "file": ""
                 },
-                "show": True
+                "show": True,
+                "command": "firewall import"
             },
             {
                 "name": "disable",
                 "args": {},
-                "show": True
+                "show": True,
+                "command": "firewall disable"
             },
             {
                 "name": "enable",
                 "args": {},
-                "show": True
+                "show": True,
+                "command": "firewall enable"
             },
             {
                 "name": "status",
                 "args": {},
-                "show": False
+                "show": False,
+                "command": "firewall status"
             }
         ]
         result["fw_status"] = self.status()
@@ -110,7 +118,10 @@ class WindowsFirewallManager(FirewallManager):
         exec_command(command)
 
     def disable(self):
-        return exec_command("netsh advfirewall set allprofiles state off")
+        result = dict()
+        result["data"] = exec_command("netsh advfirewall set allprofiles state off")["data"]
+        result["status"] = not self.check_status()
+        return result
 
     def enable(self):
         return exec_command("netsh advfirewall set allprofiles state on")
@@ -173,3 +184,10 @@ class WindowsFirewallManager(FirewallManager):
         cursor += 2
 
         return status_data
+
+    def check_status(self):
+        result = True
+        response = self.status()["data"]
+        for key in response.keys():
+            result = result and response.get(key)
+        return result
