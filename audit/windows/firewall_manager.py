@@ -40,7 +40,7 @@ class WindowsFirewallManager(FirewallManager):
                 "command": "firewall get rules"
             },
             {
-                "name": "export setting",
+                "name": "export settings",
                 "args": {
                     "filename": ""
                 },
@@ -50,7 +50,7 @@ class WindowsFirewallManager(FirewallManager):
             {
                 "name": "import settings",
                 "args": {
-                    "file": ""
+                    "filename": ""
                 },
                 "show": True,
                 "command": "firewall import"
@@ -113,7 +113,7 @@ class WindowsFirewallManager(FirewallManager):
         return exec_command(command)
 
     def import_firewall(self, args):
-        filename = args["file"]
+        filename = args["filename"]
         command = "netsh advfirewall import \"" + Environment().path_firewall_resources + "/" + filename + "\""
         exec_command(command)
 
