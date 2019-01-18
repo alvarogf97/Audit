@@ -72,6 +72,12 @@ class WindowsFirewallManager(FirewallManager):
                 "args": {},
                 "show": False,
                 "command": "firewall status"
+            },
+            {
+                "name": "files",
+                "args": {},
+                "show": False,
+                "command": "firewall files"
             }
         ]
         result["fw_status"] = self.status()
@@ -107,15 +113,20 @@ class WindowsFirewallManager(FirewallManager):
         return result
 
     def export_firewall(self, args):
+        result = dict()
         filename = args["filename"] + ".wfw"
         command = "netsh advfirewall export \"" + Environment().path_firewall_resources + "/" + filename + "\""
-        print(command)
-        return exec_command(command)
+        result["data"] = exec_command(command)["data"]
+        result["status"] = self.check_file(filename)
+        return result
 
     def import_firewall(self, args):
+        result = dict()
         filename = args["filename"]
         command = "netsh advfirewall import \"" + Environment().path_firewall_resources + "/" + filename + "\""
-        exec_command(command)
+        result["data"] = exec_command(command)["data"]
+        result["status"] = len(result["data"]) < 12
+        return result
 
     def disable(self):
         result = dict()
@@ -124,7 +135,10 @@ class WindowsFirewallManager(FirewallManager):
         return result
 
     def enable(self):
-        return exec_command("netsh advfirewall set allprofiles state on")
+        result = dict()
+        result["data"] = exec_command("netsh advfirewall set allprofiles state on")["data"]
+        result["status"] = self.check_status()
+        return result
 
     def status(self):
         result = dict()

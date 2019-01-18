@@ -85,10 +85,17 @@ class FirewallManager:
             return self.remove_chain(args)
         elif command.startswith("firewall status"):
             return self.status()
+        elif command.startswith("firewall files"):
+            return self.get_firewall_files()
         else:
             result = dict()
             result["status"] = False
             result["data"] = "unavailable operation"
+
+    @staticmethod
+    def check_file(filename):
+        return filename in [f for f in os.listdir(Environment().path_firewall_resources)
+                            if os.path.isfile(os.path.join(Environment().path_firewall_resources, f))]
 
     @staticmethod
     def get_firewall_files():
