@@ -63,7 +63,7 @@ class Agent:
                                " from: " + str(self.connection.get_client_address()) + " connected")
             except TypeError as e:
                 warnings.warn(str(e))
-                self.queue.put("logger_info@chcked server status")
+                self.queue.put("logger_info@checked server status")
             except Exception as e:
                 if self.connection.has_connection():
                     self.connection.send_msg(self.parse_json({"satus": False, "data": os.getcwd()}))
@@ -310,7 +310,7 @@ class Agent:
 
                 except Exception as e:
                     warnings.warn(str(e))
-                    self.connection.close_connection()
+                    self.close()
 
     def close(self):
         self.connection.close()

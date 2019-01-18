@@ -12,4 +12,3 @@ ftfy
 vulners
 python-iptables; sys_platform == 'linux'
 sqlalchemy
-
