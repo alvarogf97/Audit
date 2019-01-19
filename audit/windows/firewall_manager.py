@@ -19,8 +19,9 @@ class WindowsFirewallManager(FirewallManager):
                     "interface": "",
                     "action": "",
                     "protocol": "",
-                    "local port": "",
+                    "localport": "",
                     "program": "",
+                    "dir":""
                 },
                 "show": False,
                 "command": "firewall add rule"
@@ -90,20 +91,23 @@ class WindowsFirewallManager(FirewallManager):
         pass
 
     def add_rule(self, args):
-        command = ""
+        result = dict()
+        command = "netsh advfirewall firewall add rule"
         for key, value in args.items():
-            command += " " + key + "=" + value
-        return exec_command(command)
+            if value != "":
+                command += " " + key + "=" + value
+        print(command)
+        result["data"] = exec_command(command)["data"]
+        result["status"] = len(result["data"]) < 13
+        return result
 
     def remove_rule(self, args):
         result = dict()
         rule = self.rules[args["number"]]
         name = rule.name
         command = "netsh advfirewall firewall delete rule name=\"" + name + "\""
-        print(command)
         result["data"] = exec_command(command)["data"]
         result["status"] = len(result["data"]) < 40
-        print(result)
         return result
 
     def get_rules(self):
