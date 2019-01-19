@@ -1,4 +1,4 @@
-from audit.core.core import exec_command
+from audit.core.core import exec_command, restart
 from audit.core.environment import Environment
 from audit.core.firewall_manager import FirewallManager, Rule
 
@@ -22,13 +22,13 @@ class WindowsFirewallManager(FirewallManager):
                     "local port": "",
                     "program": "",
                 },
-                "show": True,
+                "show": False,
                 "command": "firewall add rule"
             },
             {
                 "name": "remove rule",
                 "args": {
-                    "name": ""
+                    "number": ""
                 },
                 "show": False,
                 "command": "firewall remove rule"
@@ -96,9 +96,15 @@ class WindowsFirewallManager(FirewallManager):
         return exec_command(command)
 
     def remove_rule(self, args):
-        name = args["name"]
-        command = "netsh advfirewall firewall delete rule name=" + name
-        return exec_command(command)
+        result = dict()
+        rule = self.rules[args["number"]]
+        name = rule.name
+        command = "netsh advfirewall firewall delete rule name=\"" + name + "\""
+        print(command)
+        result["data"] = exec_command(command)["data"]
+        result["status"] = len(result["data"]) < 40
+        print(result)
+        return result
 
     def get_rules(self):
         result = dict()
@@ -126,6 +132,8 @@ class WindowsFirewallManager(FirewallManager):
         command = "netsh advfirewall import \"" + Environment().path_firewall_resources + "/" + filename + "\""
         result["data"] = exec_command(command)["data"]
         result["status"] = len(result["data"]) < 12
+        if result["status"]:
+            restart()
         return result
 
     def disable(self):
@@ -158,6 +166,7 @@ class WindowsFirewallManager(FirewallManager):
         rules = []
         lines = string.split('\n')
         is_rule = False
+        actual_rule_name = ""
         actual_rule_num = 0
         actual_rule_args = dict()
         for line in lines:
@@ -170,11 +179,14 @@ class WindowsFirewallManager(FirewallManager):
                     if len(attr) > 1:
                         attr_name = attr[0].strip()
                         attr_value = attr[1].strip()
+                        if actual_rule_name == "":
+                            actual_rule_name = attr_value
                         actual_rule_args[attr_name] = attr_value
             elif is_rule:
                 is_rule = False
-                rules.append(Rule(number=actual_rule_num, kwargs=actual_rule_args))
+                rules.append(WindowsRule(number=actual_rule_num, name=actual_rule_name, kwargs=actual_rule_args))
                 actual_rule_num = actual_rule_num + 1
+                actual_rule_name = ""
                 actual_rule_args = dict()
         return rules
 
@@ -206,3 +218,10 @@ class WindowsFirewallManager(FirewallManager):
         for key in response.keys():
             result = result and response.get(key)
         return result
+
+
+class WindowsRule(Rule):
+
+    def __init__(self, number, name, **kwargs):
+        super().__init__(number,**kwargs)
+        self.name = name
