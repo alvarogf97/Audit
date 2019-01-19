@@ -148,6 +148,7 @@ class WindowsFirewallManager(FirewallManager):
             result["data"] = self.parse_status(data["data"])
         else:
             result["status"] = False
+        result["administrator"] = exec_command("net session")["status"]
         return result
 
     def is_compatible(self):

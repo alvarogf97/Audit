@@ -310,7 +310,7 @@ class Agent:
 
                 except Exception as e:
                     warnings.warn(str(e))
-                    self.close()
+                    self.connection.close_connection()
 
     def close(self):
         self.connection.close()
