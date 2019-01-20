@@ -56,17 +56,17 @@ class DebianPacketManager(LinuxPacketManager):
                 except Exception as e:
                     warnings.warn(str(e))
                     search = None
-                if search != {} and len(search.get("packages")) > 0:
-                    print(search)
-                    vulnerabilities[packet] = []
-                    title = Environment().distro + " vulnerability on " + str(packet)
-                    v = Vulnerability(title=title,
-                                      score=search.get("cvss").get("score"),
-                                      href=search.get("href"),
-                                      published=search.get("published"),
-                                      last_seen=search.get("lastseen"),
-                                      reporter=search.get("reporter"),
-                                      cumulative_fix=search.get("cumulative_fix"))
-                    vulnerabilities[packet].append(v)
+            if search != {}:
+                print(search)
+                vulnerabilities[packet] = []
+                title = Environment().distro + " vulnerability on " + str(packet)
+                v = Vulnerability(title=title,
+                                  score=search.get("cvss").get("score"),
+                                  href=search.get("href"),
+                                  published=search.get("published"),
+                                  last_seen=search.get("lastseen"),
+                                  reporter=search.get("reporter"),
+                                  cumulative_fix=search.get("cumulative_fix"))
+                vulnerabilities[packet].append(v)
             packet_counter += 1
         return vulnerabilities
