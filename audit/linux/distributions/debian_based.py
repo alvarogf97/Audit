@@ -56,7 +56,8 @@ class DebianPacketManager(LinuxPacketManager):
                 except Exception as e:
                     warnings.warn(str(e))
                     search = None
-                if len(search.get("packages")) > 0:
+                if search != {} and len(search.get("packages")) > 0:
+                    print(search)
                     vulnerabilities[packet] = []
                     title = Environment().distro + " vulnerability on " + str(packet)
                     v = Vulnerability(title=title,
