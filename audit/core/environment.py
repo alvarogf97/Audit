@@ -15,6 +15,7 @@ class Environment:
             self.path_download_files = self.base_path + "/resources/downloads"
             self.path_streams = self.base_path + "/resources/streams"
             self.path_firewall_resources = self.base_path + "/resources/firewall_resources"
+            self.path_database = self.base_path + "/resources/db"
 
             # create path dirs
             if not os.path.exists(self.base_path+"/resources"):
@@ -25,6 +26,8 @@ class Environment:
                 os.mkdir(self.path_download_files)
             if not os.path.exists(self.path_firewall_resources):
                 os.mkdir(self.path_firewall_resources)
+            if not os.path.exists(self.path_database):
+                os.mkdir(self.path_database)
 
             features = get_features()
 
