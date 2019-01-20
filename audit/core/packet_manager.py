@@ -4,6 +4,7 @@ import os
 import time
 import warnings
 import requests
+import vulners
 from multiprocessing import Queue
 from typing import List, Dict
 from abc import abstractmethod
@@ -86,8 +87,37 @@ class PacketManager:
     @abstractmethod
     def get_installed_packets(self) -> List[Package]: pass
 
-    @abstractmethod
-    def get_vulnerabilities(self, queue: Queue) -> Dict[Package, List[Vulnerability]]: pass
+    def get_vulnerabilities(self, queue: Queue) -> Dict[Package, List[Vulnerability]]:
+        queue.put("getting installed packets")
+        packages = self.get_installed_packets()
+        packages.append(Package(Environment().os, Environment().system_version.split(".")[0]))
+        vulnerabilities = dict()
+        packet_counter = 1
+        for packet in packages:
+            queue.put("examined " + str(packet_counter) + "/" + str(len(packages)))
+            vulners_api = vulners.Vulners(api_key=Environment().vulners_api_key)
+            search = None
+            while search is None:
+                try:
+                    search = vulners_api.softwareVulnerabilities(packet.name, packet.version.split(".")[0], 3)
+                except Exception as e:
+                    warnings.warn(str(e))
+                    search = None
+            if search != {}:
+                vulnerabilities[packet] = []
+                search = [search.get(key) for key in search if key not in ['info', 'blog', 'bugbounty']]
+                for type_vulner in search:
+                    for vulner in type_vulner:
+                        v = Vulnerability(title=vulner.get("title"),
+                                          score=vulner.get("cvss").get("score"),
+                                          href=vulner.get("href"),
+                                          published=vulner.get("published"),
+                                          last_seen=vulner.get("lastseen"),
+                                          reporter=vulner.get("reporter"),
+                                          cumulative_fix=vulner.get("cumulative_fix"))
+                        vulnerabilities[packet].append(v)
+            packet_counter += 1
+        return vulnerabilities
 
     # install_package will install package in system
     def install_package(self, queue: Queue, name: str):

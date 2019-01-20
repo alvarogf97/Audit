@@ -30,9 +30,6 @@ class LinuxPacketManager(PacketManager):
     @abstractmethod
     def get_installed_packets(self)-> List[Package]: pass
 
-    @abstractmethod
-    def get_vulnerabilities(self,queue: Queue) -> Dict[Package, List[Vulnerability]]: pass
-
 
 def get_suitable_packet_manager(path_download_files: str) -> LinuxPacketManager:
     sys_name = Environment().distro
