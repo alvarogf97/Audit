@@ -36,7 +36,6 @@ class Agent:
         self.active_processes = dict()
         self.current_user = None
 
-        init_db()
         define_managers()
 
     def serve_forever(self):

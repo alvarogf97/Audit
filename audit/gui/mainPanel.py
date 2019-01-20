@@ -4,8 +4,10 @@ import sys
 import warnings
 import wx
 import re
+from audit.core import environment
 from queue import Queue
 from audit.core.agent import Agent
+from audit.database.user import init_db
 from audit.gui.userPanel import UserPanel
 
 
@@ -47,6 +49,8 @@ class MainPanel(wx.Panel):
         icon = wx.Icon()
         icon.CopyFromBitmap(wx.Bitmap(get_path_icon() + "/icon.ico", wx.BITMAP_TYPE_ANY))
         self.user_frame.SetIcon(icon)
+        environment.Environment()
+        init_db()
 
     def update_server_info(self, msg):
         self.server_info.AppendText(msg + "\n")
