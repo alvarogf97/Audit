@@ -38,8 +38,7 @@ class Package:
 class Vulnerability:
 
     def __init__(self, title: str, score: str, href: str,
-                 published: str, last_seen: str, reporter: str,
-                 cumulative_fix: str):
+                 published: str, last_seen: str, reporter: str):
 
         self.title = title
         self.score = score
@@ -47,9 +46,6 @@ class Vulnerability:
         self.published = published
         self.last_seen = last_seen
         self.reporter = reporter
-        self.cumulative_fix = cumulative_fix
-        if self.cumulative_fix is None:
-            self.cumulative_fix = "Upgrade"
 
     def __eq__(self, other):
         res = False
@@ -113,8 +109,7 @@ class PacketManager:
                                           href=vulner.get("href"),
                                           published=vulner.get("published"),
                                           last_seen=vulner.get("lastseen"),
-                                          reporter=vulner.get("reporter"),
-                                          cumulative_fix=vulner.get("cumulative_fix"))
+                                          reporter=vulner.get("reporter"))
                         vulnerabilities[packet].append(v)
             packet_counter += 1
         return vulnerabilities
