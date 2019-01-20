@@ -35,7 +35,7 @@ These instructions will get you a copy of the project up and running on your loc
 
 You need to have python 3.5+ in order to use this application and pip installed on your computer.
 
-####Linux
+#### Linux
 
 You need to install some libs before installation:
 
@@ -56,25 +56,25 @@ libsm
 
 You can install them by executting the next commands:
 
-#####Ubuntu/Debian based distros:
+##### Ubuntu/Debian based distros:
 
 ```
 sudo apt install make gcc libgtk-3-dev libwebkitgtk-dev libwebkitgtk-3.0-dev libgstreamer-gl1.0-0 freeglut3 freeglut3-dev python-gst-1.0 python3-gst-1.0 libglib2.0-dev ubuntu-restricted-extras libgstreamer-plugins-base1.0-dev
 ```
 
-#####RHEL based distros:
+##### RHEL based distros:
 
 ```
 Give examples
 ```
 
-#####Arch based distros:
+##### Arch based distros:
 
 ```
 Give examples
 ```
 
-#####Install WxPython:
+##### Install WxPython:
 
 You can compile and install it by yourself:
 
@@ -96,12 +96,12 @@ Or just install by the compiled wheel in https://mega.nz/#!B4BwBIiZ!5Hvl2vkVfeRw
 ````angular2
 easy_install wxPython-4.0.4-cp36-cp36m-linux_x86_64.whl
 ````
-####Windows
+#### Windows
 
 You can install PCAP lib by yourself with this link 
 https://nmap.org/npcap/dist/npcap-0.99-r7.exe or let Audit install it for you.
 
-####Mac OS
+#### Mac OS
 
 Dependencies:
 
