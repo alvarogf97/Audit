@@ -133,7 +133,11 @@ python start.py
 
 You can use pyinstaller in order to get an executable from this application.
 Please let's go to builder folder and execute the script depending on your
-operative system.
+operative system. 
+
+- Install pyinstaller
+````pip install pyinstaller````
+- Execute your os script in builder folder
 
 ## Authors
 

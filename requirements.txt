@@ -1,6 +1,5 @@
 upnpclient
 wxpython
-pyinstaller
 ifaddr
 dpkt
 requests
@@ -8,7 +7,6 @@ psutil
 pcap-ct
 distro
 netifaces
-ftfy
 vulners
 python-iptables; sys_platform == 'linux'
 sqlalchemy
