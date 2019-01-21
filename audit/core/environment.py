@@ -16,6 +16,7 @@ class Environment:
             self.path_streams = self.base_path + "/resources/streams"
             self.path_firewall_resources = self.base_path + "/resources/firewall_resources"
             self.path_database = self.base_path + "/resources/db"
+            self.path_embedded_scripts = get_path_scripts(self.base_path)
 
             # create path dirs
             if not os.path.exists(self.base_path+"/resources"):
@@ -66,6 +67,13 @@ def get_path_certs(base_path):
         return os.path.join(sys._MEIPASS, "certs")
     else:
         return base_path + "/resources/certs"
+
+
+def get_path_scripts(base_path):
+    if hasattr(sys, "_MEIPASS"):  # Pyinstaller arguments
+        return os.path.join(sys._MEIPASS, "scripts")
+    else:
+        return base_path + "/resources/scripts"
 
 
 def get_features():

@@ -1,4 +1,4 @@
-import iptc
+import warnings
 from audit.core.core import exec_command, shell_command
 from audit.core.environment import Environment
 from audit.core.firewall_manager import FirewallManager
@@ -11,19 +11,23 @@ class LinuxFirewallManager(FirewallManager):
 
     def firewall_descriptor(self):
         result = dict()
-        result["status"] = True
+        result["status"] = self.is_compatible()
         result["data"] = [
             {
                 "name": "add chain",
                 "args": {
                     "name": "",
-                }
+                },
+                "show": False,
+                "command": "firewall add rule"
             },
             {
                 "name": "remove chain",
                 "args": {
                     "name": ""
-                }
+                },
+                "show": False,
+                "command": "firewall add rule"
             },
             {
                 "name": "add rule",
@@ -33,40 +37,70 @@ class LinuxFirewallManager(FirewallManager):
                     "src": "",
                     "action": "",
                     "protocol": "",
-                }
+                },
+                "show": False,
+                "command": "firewall add rule"
             },
             {
                 "name": "remove rule",
                 "args": {
                     "name": "",
-                }
+                },
+                "show": False,
+                "command": "firewall remove rule"
             },
             {
-                "name": "get rules",
-                "args": {}
+                "name": "view rules",
+                "args": {},
+                "show": True,
+                "command": "firewall get rules"
             },
             {
                 "name": "export settings",
-                "args": {}
+                "args": {
+                    "filename": ""
+                },
+                "show": True,
+                "command": "firewall export"
             },
             {
                 "name": "import settings",
                 "args": {
-                    "file": ""
-                }
+                    "filename": ""
+                },
+                "show": True,
+                "command": "firewall import"
             },
             {
                 "name": "disable",
-                "args": {}
+                "args": {},
+                "show": True,
+                "command": "firewall disable"
             },
             {
                 "name": "enable",
-                "args": {}
+                "args": {},
+                "show": True,
+                "command": "firewall enable"
+            },
+            {
+                "name": "status",
+                "args": {},
+                "show": False,
+                "command": "firewall status"
+            },
+            {
+                "name": "files",
+                "args": {},
+                "show": False,
+                "command": "firewall files"
             }
         ]
+        result["fw_status"] = self.status()
         return result
 
     def add_chain(self, args):
+        import iptc
         result = dict()
         result["status"] = True
         result["data"] = ""
@@ -75,6 +109,7 @@ class LinuxFirewallManager(FirewallManager):
         return result
 
     def remove_chain(self, args):
+        import iptc
         result = dict()
         result["status"] = True
         result["data"] = ""
@@ -83,6 +118,7 @@ class LinuxFirewallManager(FirewallManager):
         return result
 
     def add_rule(self, args):
+        import iptc
         result = dict()
         result["status"] = True
         result["data"] = ""
@@ -97,6 +133,7 @@ class LinuxFirewallManager(FirewallManager):
         return result
 
     def remove_rule(self, args):
+        import iptc
         result = dict()
         result["status"] = False
         result["data"] = "rule named " + args["name"] + " not found"
@@ -113,6 +150,7 @@ class LinuxFirewallManager(FirewallManager):
         table.autocommit = True
 
     def get_rules(self):
+        import iptc
         result = dict()
         result["status"] = True
         result_str = ""
@@ -127,35 +165,62 @@ class LinuxFirewallManager(FirewallManager):
 
     def export_firewall(self, args):
         filename = args["filename"]
-        command = "iptables-save > \"" + Environment().path_firewall_resources + "/" + filename + "\""
+        command = "iptables-save > \"" + Environment().path_firewall_resources + "/" + filename + ".rules\""
         return exec_command(command)
 
     def import_firewall(self, args):
         filename = args["file"]
-        command = "iptables-restore < \"" + Environment().path_firewall_resources + "/" + filename + "\""
+        command = "iptables-restore < \"" + Environment().path_firewall_resources + "/" + filename + ".rules\""
         return exec_command(command)
 
     def disable(self):
-        command = "iptables-save > \"" + Environment().path_firewall_resources + "/last\""
+        command = "iptables-save > \"" + Environment().path_firewall_resources + "/last.rules\""
         shell_command(command)
-        shell_command("iptables -X")
-        shell_command("iptables -t nat -F")
-        shell_command("iptables -t nat -X")
-        shell_command("iptables -t mangle -F")
-        shell_command("iptables -t mangle -X")
-        shell_command("iptables -P INPUT ACCEPT")
-        shell_command("iptables -P FORWARD ACCEPT")
-        return exec_command("iptables -P OUTPUT ACCEPT")
+        return exec_command("./" + Environment().path_embedded_scripts + "/down_iptables.sh")
 
     def enable(self):
         command = "iptables-restore < \"" + Environment().path_firewall_resources + "/last\""
         return exec_command(command)
 
     def status(self):
-        pass
+        result = dict()
+        data = exec_command("iptables --list-rules")
+        result["data"] = data["data"]
+        if data["status"]:
+            result["status"] = self.parse_status(result["data"])
+        else:
+            result["status"] = False
+        return result
 
     def parse_rules(self, string):
         pass
 
     def is_compatible(self):
-        return True
+        try:
+            import iptc
+            return exec_command("iptables --list-rules")["status"]
+        except Exception as e:
+            warnings.warn(str(e))
+            return False
+
+    def parse_status(self, string):
+        lines = string.split("\n")
+        cursor = 1
+        status_data = dict()
+
+        cursor += 2
+        status_domain = lines[cursor].split()[1]
+        status_data["domain"] = True if status_domain.lower().startswith("a") else False
+        cursor += 2
+
+        cursor += 2
+        status_public = lines[cursor].split()[1]
+        status_data["public"] = True if status_public.lower().startswith("a") else False
+        cursor += 2
+
+        cursor += 2
+        status_private = lines[cursor].split()[1]
+        status_data["private"] = True if status_private.lower().startswith("a") else False
+        cursor += 2
+
+        return status_data
