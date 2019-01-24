@@ -97,6 +97,7 @@ class LinuxFirewallManager(FirewallManager):
             }
         ]
         result["fw_status"] = self.status()
+        print(result)
         return result
 
     def add_chain(self, args):
@@ -185,11 +186,14 @@ class LinuxFirewallManager(FirewallManager):
     def status(self):
         result = dict()
         data = exec_command("iptables --list-rules")
-        result["data"] = data["data"]
         if data["status"]:
-            result["status"] = self.parse_status(result["data"])
+            result["status"] = True
+            result["data"] = self.parse_status(data["data"])
+            result["administrator"] = True
         else:
             result["status"] = False
+            result["administrator"] = False
+            result["data"] = ""
         return result
 
     def parse_rules(self, string):
@@ -198,29 +202,13 @@ class LinuxFirewallManager(FirewallManager):
     def is_compatible(self):
         try:
             import iptc
-            return exec_command("iptables --list-rules")["status"]
+            return True
         except Exception as e:
             warnings.warn(str(e))
             return False
 
     def parse_status(self, string):
         lines = string.split("\n")
-        cursor = 1
         status_data = dict()
-
-        cursor += 2
-        status_domain = lines[cursor].split()[1]
-        status_data["domain"] = True if status_domain.lower().startswith("a") else False
-        cursor += 2
-
-        cursor += 2
-        status_public = lines[cursor].split()[1]
-        status_data["public"] = True if status_public.lower().startswith("a") else False
-        cursor += 2
-
-        cursor += 2
-        status_private = lines[cursor].split()[1]
-        status_data["private"] = True if status_private.lower().startswith("a") else False
-        cursor += 2
-
+        status_data["iptables"] = "-P INPUT ACCEPT" in lines and "-P FORWARD ACCEPT" in lines and "-P OUTPUT ACCEPT" in lines and len(lines) == 3
         return status_data
