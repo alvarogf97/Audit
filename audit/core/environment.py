@@ -16,7 +16,7 @@ class Environment:
             self.path_streams = self.base_path + "/resources/streams"
             self.path_firewall_resources = self.base_path + "/resources/firewall_resources"
             self.path_database = self.base_path + "/resources/db"
-            self.path_embedded_scripts = get_path_scripts(self.base_path)
+            self.path_embedded_scripts = self.base_path + "/resources/scripts"
 
             # create path dirs
             if not os.path.exists(self.base_path+"/resources"):
@@ -29,6 +29,8 @@ class Environment:
                 os.mkdir(self.path_firewall_resources)
             if not os.path.exists(self.path_database):
                 os.mkdir(self.path_database)
+            if not os.path.exists(self.path_embedded_scripts):
+                os.mkdir(self.path_embedded_scripts)
 
             features = get_features()
 
@@ -69,13 +71,6 @@ def get_path_certs(base_path):
         return base_path + "/resources/certs"
 
 
-def get_path_scripts(base_path):
-    if hasattr(sys, "_MEIPASS"):  # Pyinstaller arguments
-        return os.path.join(sys._MEIPASS, "scripts")
-    else:
-        return base_path + "/resources/scripts"
-
-
 def get_features():
     system_platform = platform.system()
     if system_platform == "Windows":
@@ -101,7 +96,7 @@ def define_managers():
         from audit.linux.packet_manager import get_suitable_packet_manager
         from audit.linux.firewall_manager import LinuxFirewallManager
         Environment().__setattr__("packetManager", get_suitable_packet_manager(Environment().path_download_files))
-        Environment().__setattr__("firewallManager", LinuxFirewallManager())
+        Environment().__setattr__("firewallManager", LinuxFirewallManager(Environment().path_embedded_scripts))
     elif Environment().os == "Darwin":
         from audit.darwin.packet_manager import DarwinPacketManager
         from audit.darwin.firewall_manager import DarwinFirewallManager

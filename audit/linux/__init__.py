@@ -1,5 +1,4 @@
 import distro
-
 from audit.core.ip_utils import get_ip_info
 
 

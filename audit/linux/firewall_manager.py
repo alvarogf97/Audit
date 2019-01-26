@@ -1,13 +1,16 @@
+import os
 import warnings
-from audit.core.core import exec_command, shell_command
+from audit.core.core import exec_command, shell_command, cd
 from audit.core.environment import Environment
 from audit.core.firewall_manager import FirewallManager
+from audit.linux.script_builder import generate_scripts
 
 
 class LinuxFirewallManager(FirewallManager):
 
-    def __init__(self):
+    def __init__(self, path_scripts):
         super().__init__()
+        generate_scripts(path_scripts)
 
     def firewall_descriptor(self):
         result = dict()
@@ -97,91 +100,54 @@ class LinuxFirewallManager(FirewallManager):
             }
         ]
         result["fw_status"] = self.status()
-        print(result)
         return result
 
     def add_chain(self, args):
-        import iptc
-        result = dict()
-        result["status"] = True
-        result["data"] = ""
-        name = args["name"]
-        iptc.Table.FILTER.create_chain(name)
-        return result
+        pass
 
     def remove_chain(self, args):
-        import iptc
-        result = dict()
-        result["status"] = True
-        result["data"] = ""
-        name = args["name"]
-        iptc.Table.FILTER.delete_chain(name)
-        return result
+        pass
 
     def add_rule(self, args):
-        import iptc
-        result = dict()
-        result["status"] = True
-        result["data"] = ""
-        chain = iptc.Chain(iptc.Table(iptc.Table.FILTER), args["chain_name"])
-        rule = iptc.Rule()
-        kwargs = {name: value for name, value in args.items() if value != ""}
-        if kwargs.get("interface") is not None: rule.in_interface = kwargs.get("interface")
-        if kwargs.get("src") is not None: rule.src = kwargs.get("src")
-        if kwargs.get("action") is not None: rule.create_target(kwargs.get("action"))
-        if kwargs.get("protocol") is not None: rule.protocol = kwargs.get("protocol")
-        chain.insert_rule(rule)
-        return result
+        pass
 
     def remove_rule(self, args):
-        import iptc
-        result = dict()
-        result["status"] = False
-        result["data"] = "rule named " + args["name"] + " not found"
-        rule_name = args["name"]
-        table = iptc.Table(iptc.Table.FILTER)
-        table.autocommit = False
-        for chain in table.chains:
-            for rule in chain.rules:
-                if rule.target.name == rule_name:
-                    chain.delete_rule(rule)
-                    result["status"] = True
-                    result["data"] = "remove successfully"
-        table.commit()
-        table.autocommit = True
+        pass
 
     def get_rules(self):
-        import iptc
-        result = dict()
-        result["status"] = True
-        result_str = ""
-        table = iptc.Table(iptc.Table.ALL)
-        for chain in table.chains:
-            result_str += "Chain " + chain.name
-            for rule in chain.rules:
-                result_str += "Rule " + rule.target.name + "\n     proto: " + rule.protocol + "\n     src: " + rule.src, "\n     dst: " + \
-                              rule.dst + "\n     in: " + rule.in_interface + "\n     out: " + rule.out_interface
-        result["data"] = result_str
-        return result
+        pass
 
     def export_firewall(self, args):
         filename = args["filename"]
-        command = "iptables-save > \"" + Environment().path_firewall_resources + "/" + filename + ".rules\""
+        command = "iptables-save > " + Environment().path_firewall_resources + "/" + filename + ".rules"
         return exec_command(command)
 
     def import_firewall(self, args):
         filename = args["file"]
-        command = "iptables-restore < \"" + Environment().path_firewall_resources + "/" + filename + ".rules\""
+        command = "iptables-restore < " + Environment().path_firewall_resources + "/" + filename + ".rules"
         return exec_command(command)
 
     def disable(self):
-        command = "iptables-save > \"" + Environment().path_firewall_resources + "/last.rules\""
+        command = "iptables-save > " + Environment().path_firewall_resources + "/last.rules"
         shell_command(command)
-        return exec_command("./" + Environment().path_embedded_scripts + "/down_iptables.sh")
+        act_cwd = os.getcwd()
+        cd(Environment().path_embedded_scripts)
+        result = exec_command("./down_iptables.sh")
+        cd(act_cwd)
+        return result
 
     def enable(self):
-        command = "iptables-restore < \"" + Environment().path_firewall_resources + "/last\""
-        return exec_command(command)
+        result = dict()
+        command = "iptables-restore < " + Environment().path_firewall_resources + "/last.rules"
+        command_result = exec_command(command)
+        if command_result["status"]:
+            data = exec_command("iptables --list-rules")
+            result["status"] = self.parse_status(data["data"])["iptables"]
+            result["data"] = command_result["data"]
+        else:
+            result["status"] = False
+            result["data"] = ""
+        return result
 
     def status(self):
         result = dict()
@@ -201,8 +167,7 @@ class LinuxFirewallManager(FirewallManager):
 
     def is_compatible(self):
         try:
-            import iptc
-            return True
+            return exec_command('iptables -h')["status"]
         except Exception as e:
             warnings.warn(str(e))
             return False
@@ -210,5 +175,5 @@ class LinuxFirewallManager(FirewallManager):
     def parse_status(self, string):
         lines = string.split("\n")
         status_data = dict()
-        status_data["iptables"] = "-P INPUT ACCEPT" in lines and "-P FORWARD ACCEPT" in lines and "-P OUTPUT ACCEPT" in lines and len(lines) == 3
+        status_data["iptables"] = not("-P INPUT ACCEPT" in lines and "-P FORWARD ACCEPT" in lines and "-P OUTPUT ACCEPT" in lines and len(lines) == 4)
         return status_data
