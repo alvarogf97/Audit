@@ -174,7 +174,7 @@ class WindowsFirewallManager(FirewallManager):
         actual_rule_num = 0
         actual_rule_args = dict()
         for line in lines:
-            if line.replace(" ", "") != '':
+            if len(line.replace(" ", "")) > 1:
                 if line.startswith('-'):
                     pass
                 else:
@@ -192,6 +192,7 @@ class WindowsFirewallManager(FirewallManager):
                 actual_rule_num = actual_rule_num + 1
                 actual_rule_name = ""
                 actual_rule_args = dict()
+        print(rules)
         return rules
 
     def parse_status(self, string):
