@@ -200,7 +200,7 @@ class LinuxFirewallManager(FirewallManager):
         info = ""
         for name_arg, value in args.items():
             if value != "":
-                info += self.parameters[name_arg] + " " + value
+                info += self.parameters[name_arg] + " " + value + " "
         return exec_command("iptables -A" + info)
 
     def remove_rule(self, args):
@@ -273,7 +273,7 @@ class LinuxFirewallManager(FirewallManager):
         for line in lines:
             if line.startswith("-A"):
                 token_line = line.split(" ")
-                name = "".join(token_line[1:])
+                name = " ".join(token_line[1:])
                 rule = Rule(number=rule_number, name=name, kwargs=dict())
                 rules.append(rule)
         return rules
