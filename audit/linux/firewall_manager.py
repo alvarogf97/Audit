@@ -40,7 +40,7 @@ class LinuxFirewallManager(FirewallManager):
         elif command.startswith("firewall files"):
             return self.get_firewall_files()
         elif command.startswith("firewall get chains"):
-            return self.get_chains()
+            return LinuxFirewallManager.get_chains()
         elif command.startswith("firewall change chain policy"):
             return self.change_chain_policy(args)
         elif command.startswith("firewall flush chain"):
@@ -169,7 +169,7 @@ class LinuxFirewallManager(FirewallManager):
         data = exec_command("iptables -L")
         if data["status"]:
             result["status"] = True
-            result["data"] = LinuxFirewallManager.parse_chain(data["data"])
+            result["data"] = Chain.list_to_json(LinuxFirewallManager.parse_chain(data["data"]))
         else:
             result["status"] = False
             result["data"] = []
@@ -178,7 +178,10 @@ class LinuxFirewallManager(FirewallManager):
     @staticmethod
     def add_chain(args):
         name = args["name"]
-        return exec_command("iptables -N " + name)
+        print("iptables -N " + name)
+        result = exec_command("iptables -N " + name)
+        print(result)
+        return result
 
     @staticmethod
     def remove_chain(args):
@@ -316,7 +319,7 @@ class Chain:
     def __init__(self, name, policy):
         self.name = name
         self.policy = policy
-        self.is_removable = name in self.default_chains
+        self.is_removable = name not in self.default_chains
 
     def to_json(self):
         result = dict()
