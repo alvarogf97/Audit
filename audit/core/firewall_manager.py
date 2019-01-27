@@ -8,18 +8,9 @@ class FirewallManager:
 
     def __init__(self):
         self.rules = None
-        self.chains = None
 
     @abstractmethod
     def firewall_descriptor(self):
-        pass
-
-    @abstractmethod
-    def add_chain(self, args):
-        pass
-
-    @abstractmethod
-    def remove_chain(self, args):
         pass
 
     @abstractmethod
@@ -62,35 +53,13 @@ class FirewallManager:
     def is_compatible(self):
         pass
 
+    @abstractmethod
+    def parse_status(self, string):
+        pass
+
+    @abstractmethod
     def execute_firewall_action(self, command: str, args):
-        if command.startswith("firewall add rule"):
-            return self.add_rule(args)
-        elif command.startswith("firewall remove rule"):
-            return self.remove_rule(args)
-        elif command.startswith("firewall get rules"):
-            return self.get_rules()
-        elif command.startswith("firewall export"):
-            return self.export_firewall(args)
-        elif command.startswith("firewall import"):
-            return self.import_firewall(args)
-        elif command.startswith("firewall disable"):
-            return self.disable()
-        elif command.startswith("firewall enable"):
-            return self.enable()
-        elif command.startswith("firewall descriptor"):
-            return self.firewall_descriptor()
-        elif command.startswith("firewall add chain "):
-            return self.add_chain(args)
-        elif command.startswith("firewall remove chain"):
-            return self.remove_chain(args)
-        elif command.startswith("firewall status"):
-            return self.status()
-        elif command.startswith("firewall files"):
-            return self.get_firewall_files()
-        else:
-            result = dict()
-            result["status"] = False
-            result["data"] = "unavailable operation"
+        pass
 
     @staticmethod
     def check_file(filename):
@@ -108,13 +77,15 @@ class FirewallManager:
 
 class Rule:
 
-    def __init__(self, number, **kwargs):
+    def __init__(self, number, name, **kwargs):
         self.number = number
         self.kwargs = kwargs
+        self.name = name
 
     def to_json(self):
         result = dict()
         result["number"] = self.number
+        result["name"] = self.name
         result.update(self.kwargs)
         return result
 

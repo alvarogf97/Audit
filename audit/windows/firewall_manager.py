@@ -8,6 +8,32 @@ class WindowsFirewallManager(FirewallManager):
     def __init__(self):
         super().__init__()
 
+    def execute_firewall_action(self, command: str, args):
+        if command.startswith("firewall add rule"):
+            return self.add_rule(args)
+        elif command.startswith("firewall remove rule"):
+            return self.remove_rule(args)
+        elif command.startswith("firewall get rules"):
+            return self.get_rules()
+        elif command.startswith("firewall export"):
+            return self.export_firewall(args)
+        elif command.startswith("firewall import"):
+            return self.import_firewall(args)
+        elif command.startswith("firewall disable"):
+            return self.disable()
+        elif command.startswith("firewall enable"):
+            return self.enable()
+        elif command.startswith("firewall descriptor"):
+            return self.firewall_descriptor()
+        elif command.startswith("firewall status"):
+            return self.status()
+        elif command.startswith("firewall files"):
+            return self.get_firewall_files()
+        else:
+            result = dict()
+            result["status"] = False
+            result["data"] = "unavailable operation"
+
     def firewall_descriptor(self):
         result = dict()
         result["status"] = self.is_compatible()
@@ -21,7 +47,7 @@ class WindowsFirewallManager(FirewallManager):
                     "protocol": "",
                     "localport": "",
                     "program": "",
-                    "dir":""
+                    "dir": ""
                 },
                 "show": False,
                 "command": "firewall add rule"
@@ -83,12 +109,6 @@ class WindowsFirewallManager(FirewallManager):
         ]
         result["fw_status"] = self.status()
         return result
-
-    def add_chain(self, args):
-        pass
-
-    def remove_chain(self, args):
-        pass
 
     def add_rule(self, args):
         result = dict()
@@ -185,14 +205,14 @@ class WindowsFirewallManager(FirewallManager):
                         attr_value = attr[1].strip()
                         if actual_rule_name == "":
                             actual_rule_name = attr_value
-                        actual_rule_args[attr_name] = attr_value
+                        else:
+                            actual_rule_args[attr_name] = attr_value
             elif is_rule:
                 is_rule = False
-                rules.append(WindowsRule(number=actual_rule_num, name=actual_rule_name, kwargs=actual_rule_args))
+                rules.append(Rule(number=actual_rule_num, name=actual_rule_name, kwargs=actual_rule_args))
                 actual_rule_num = actual_rule_num + 1
                 actual_rule_name = ""
                 actual_rule_args = dict()
-        print(rules)
         return rules
 
     def parse_status(self, string):
@@ -223,10 +243,3 @@ class WindowsFirewallManager(FirewallManager):
         for key in response.keys():
             result = result and response.get(key)
         return result
-
-
-class WindowsRule(Rule):
-
-    def __init__(self, number, name, **kwargs):
-        super().__init__(number,**kwargs)
-        self.name = name

@@ -8,5 +8,4 @@ pcap-ct
 distro
 netifaces
 vulners
-python-iptables; sys_platform == 'linux'
 sqlalchemy
