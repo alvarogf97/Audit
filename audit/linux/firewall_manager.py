@@ -42,9 +42,9 @@ class LinuxFirewallManager(FirewallManager):
         elif command.startswith("firewall get chains"):
             return LinuxFirewallManager.get_chains()
         elif command.startswith("firewall change chain policy"):
-            return self.change_chain_policy(args)
+            return LinuxFirewallManager.change_chain_policy(args)
         elif command.startswith("firewall flush chain"):
-            return self.flush_chain(args)
+            return LinuxFirewallManager.flush_chain(args)
         else:
             result = dict()
             result["status"] = False
@@ -190,6 +190,7 @@ class LinuxFirewallManager(FirewallManager):
     def change_chain_policy(args):
         name = args["name"]
         policy = args["policy"]
+        print("iptables -P " + name + " " + policy)
         return exec_command("iptables -P " + name + " " + policy)
 
     @staticmethod

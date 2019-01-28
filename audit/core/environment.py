@@ -1,6 +1,7 @@
 import os
 import sys
 import platform
+import warnings
 import requests
 
 
@@ -35,7 +36,11 @@ class Environment:
             features = get_features()
 
             self.private_ip = features["local_ip"]
-            self.public_ip = str(requests.get('https://api.ipify.org').text)
+            self.public_ip = "could not resolve public ip due to network error"
+            try:
+                self.public_ip = str(requests.get('https://api.ipify.org').text)
+            except Exception as e:
+                warnings.warn(str(e))
             self.os = features["os"]
             self.distro = features["distro"]
             self.distro_name = features["distro_name"]
