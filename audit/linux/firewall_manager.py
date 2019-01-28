@@ -31,8 +31,8 @@ class LinuxFirewallManager(FirewallManager):
             return self.enable()
         elif command.startswith("firewall descriptor"):
             return self.firewall_descriptor()
-        elif command.startswith("firewall add chain "):
-            return self.add_chain(args)
+        elif command.startswith("firewall add chain"):
+            return LinuxFirewallManager.add_chain(args)
         elif command.startswith("firewall remove chain"):
             return self.remove_chain(args)
         elif command.startswith("firewall status"):
@@ -49,6 +49,7 @@ class LinuxFirewallManager(FirewallManager):
             result = dict()
             result["status"] = False
             result["data"] = "unavailable operation"
+            return result
 
     def firewall_descriptor(self):
         result = dict()
@@ -178,10 +179,7 @@ class LinuxFirewallManager(FirewallManager):
     @staticmethod
     def add_chain(args):
         name = args["name"]
-        print("iptables -N " + name)
-        result = exec_command("iptables -N " + name)
-        print(result)
-        return result
+        return exec_command("iptables -N " + name)
 
     @staticmethod
     def remove_chain(args):

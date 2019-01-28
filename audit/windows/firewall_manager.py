@@ -33,6 +33,7 @@ class WindowsFirewallManager(FirewallManager):
             result = dict()
             result["status"] = False
             result["data"] = "unavailable operation"
+            return result
 
     def firewall_descriptor(self):
         result = dict()
