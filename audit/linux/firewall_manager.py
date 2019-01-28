@@ -318,12 +318,14 @@ class Chain:
         self.name = name
         self.policy = policy
         self.is_removable = name not in self.default_chains
+        self.is_changeable = policy != "CUSTOM"
 
     def to_json(self):
         result = dict()
         result["name"] = self.name
         result["policy"] = self.policy
         result["is_removable"] = self.is_removable
+        result["is_changeable"] = self.is_changeable
         return result
 
     @staticmethod
