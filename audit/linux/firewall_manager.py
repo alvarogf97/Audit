@@ -190,7 +190,6 @@ class LinuxFirewallManager(FirewallManager):
     def change_chain_policy(args):
         name = args["name"]
         policy = args["policy"]
-        print("iptables -P " + name + " " + policy)
         return exec_command("iptables -P " + name + " " + policy)
 
     @staticmethod
