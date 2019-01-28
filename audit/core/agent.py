@@ -1,7 +1,7 @@
 import json
 import os
 import warnings
-from audit.database.user import User, init_db
+from audit.database.user import User
 from multiprocessing import Queue
 from audit.core.connection import Connection
 from audit.core.core import check_active_processes, cd, get_processes, kill_process, restart, exec_command
@@ -317,9 +317,9 @@ class Agent:
 
     @staticmethod
     def parse_json(json_item) -> str:
+        print(json.dumps(json_item, sort_keys=True, indent=4))
         return json.dumps(json_item, sort_keys=True, indent=4)
 
     @staticmethod
     def parse_string(query_str: str):
         return json.loads(query_str)
-
