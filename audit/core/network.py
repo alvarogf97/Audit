@@ -170,6 +170,7 @@ class NetworkMeasure:
         result["size"] = self.size
         result["hour"] = str(self.hour)
         result["is_input"] = self.is_input
+        return result
 
     @staticmethod
     def list_to_json(measure_list):
