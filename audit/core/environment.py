@@ -49,7 +49,7 @@ class Environment:
             self.default_gateway = features["default_gateway"]
             self.codec_type = features["codec_type"]
             self.time_retrieve_network_sniffer = 60
-            self.time_analysis_network = 0
+            self.time_analysis_network = 5
 
             # managers
             self.packetManager = None

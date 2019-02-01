@@ -4,13 +4,13 @@ import os
 import socket
 import time
 import warnings
+from datetime import datetime
 from multiprocessing import Queue
 import psutil
 import dpkt
 from audit.core.environment import Environment
 
 
-# get_ports_open_by_processes send ports which are open by processes
 def get_ports_open_by_processes():
     result = dict()
     result["status"] = True
@@ -30,39 +30,42 @@ def get_ports_open_by_processes():
     return result
 
 
-# network_analysis inform about anomaly amount of data in packets
 def network_analysis(processes_active, new: bool):
     result = dict()
     result["status"] = True
 
     if "sniffer" in processes_active.keys():
+        result["code"] = 0
         result["data"] = "collecting information. Remaining time: " \
-                            + str(max(Environment().time_retrieve_network_sniffer
-                                      - (time.time() - processes_active["sniffer"][1]), 0)) \
-                            + "s"
+                         + str(max(Environment().time_retrieve_network_sniffer
+                                   - (time.time() - processes_active["sniffer"][1]), 0)) \
+                         + "s"
     elif not os.path.isfile(Environment().path_streams + "/data.json") or new:
         current_cwd = os.getcwd()
         try:
             import pcap
             os.chdir(Environment().base_path)
             queue = multiprocessing.Queue()
-            sniffer = multiprocessing.Process(target=retrieve_in_background, args=(queue,))
-            sniffer.start()
-            processes_active["sniffer"] = (sniffer, time.time(), queue)
+            background_sniffer = multiprocessing.Process(target=get_calibrate_file, args=(queue,))
+            background_sniffer.start()
+            processes_active["sniffer"] = (background_sniffer, time.time(), queue)
             result["data"] = "collecting information. Remaining time:: " \
-                                + str(max(Environment().time_analysis_network
-                                          + Environment().time_retrieve_network_sniffer
-                                          - (time.time() - processes_active["sniffer"][1]), 0)) \
-                                + "s"
+                             + str(max(Environment().time_analysis_network
+                                       + Environment().time_retrieve_network_sniffer
+                                       - (time.time() - processes_active["sniffer"][1]), 0)) \
+                             + "s"
+            result["code"] = 0
         except Exception as e:
             warnings.warn(str(e))
+            result["code"] = 1
             if "installer" in processes_active.keys():
                 # communicate with subprocess
-                queue = processes_active["vulners"][2]
+                queue = processes_active["installer"][2]
                 queue_msg = queue.get()
                 if queue_msg == "fail":
-                    processes_active["vulners"][1].terminate()
-                result["data"] = queue_msg
+                    processes_active["installer"][0].terminate()
+                    result["code"] = -1
+                result["installer"] = queue_msg
             else:
                 # install pcap
                 queue = multiprocessing.Queue()
@@ -74,7 +77,14 @@ def network_analysis(processes_active, new: bool):
         finally:
             os.chdir(current_cwd)
     else:
-        result["data"] = "not implemented yet"
+        result["code"] = 2
+        result["data"] = dict()
+        sniffer_data = sniffer(Environment().time_retrieve_network_sniffer)
+        result["data"]["input"] = NetworkMeasure.list_to_json(sniffer_data["input"])
+        result["data"]["output"] = NetworkMeasure.list_to_json(sniffer_data["output"])
+        #TODO
+        # dos listas de input y output como regresion estadistica (predecir evolucion)
+        # analisis de las medidas con el fichero data para comprobar anomalias
 
     return result
 
@@ -85,6 +95,8 @@ def sniffer(temp):
     import pcap
     # pc will capture network traffic
     result = dict()
+    result["input"] = []
+    result["output"] = []
     init_time = time.time()
     my_ip = Environment().private_ip
     pc = pcap.pcap(name=Environment().default_adapter)
@@ -101,29 +113,32 @@ def sniffer(temp):
             ip1, ip2 = map(socket.inet_ntoa, [ip.src, ip.dst])
             # is the protocol TCP? (tcp has ports)
             if ip.p == socket.IPPROTO_TCP:  # TCP traffic
-                I7 = ip.data
+                pck_info = ip.data
+                # print(ip.__bytes__)
                 # source IP port and Destination port
-                sport, dport = [I7.sport, I7.dport]
-                if len(I7.data) > 0:
+                sport, dport = [pck_info.sport, pck_info.dport]
+                if len(pck_info.data) > 0:
                     # from my ip
                     if ip1 in my_ip:
-                        if sport in result.keys():
-                            (result[sport][1]).append(len(I7.data))
-                        else:
-                            result[sport] = ([], [len(I7.data)])
+                        measure = NetworkMeasure(port=sport, size=len(pck_info),
+                                                 hour=str(datetime.utcfromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')),
+                                                 is_input=False)
+                        result["output"].append(measure)
                     # to my ip
                     elif ip2 in my_ip:
-                        if dport in result.keys():
-                            (result[dport][0]).append(len(I7.data))
-                        else:
-                            result[dport] = ([len(I7.data)], [])
+                        measure = NetworkMeasure(port=dport, size=len(pck_info),
+                                                 hour=str(datetime.utcfromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')),
+                                                 is_input=True)
+                        result["input"].append(measure)
 
 
-# retrieve_in_background do the task in background
-def retrieve_in_background(queue: Queue):
+def get_calibrate_file(queue: Queue):
+    result = dict()
     data = sniffer(Environment().time_retrieve_network_sniffer)
+    result["input"] = NetworkMeasure.list_to_json(data["input"])
+    result["output"] = NetworkMeasure.list_to_json(data["output"])
     with open(Environment().path_streams + '/data.json', 'w') as fp:
-        json.dump(data, fp, sort_keys=True, indent=4)
+        json.dump(result, fp, sort_keys=True, indent=4)
     return
 
 
@@ -139,3 +154,26 @@ def get_adapters():
         return darwin_adapters()
     else:
         raise Exception("platform not supported")
+
+
+class NetworkMeasure:
+
+    def __init__(self, port, size, hour, is_input):
+        self.port = port
+        self.size = size
+        self.hour = hour
+        self.is_input = is_input
+
+    def to_json(self):
+        result = dict()
+        result["port"] = self.port
+        result["size"] = self.size
+        result["hour"] = str(self.hour)
+        result["is_input"] = self.is_input
+
+    @staticmethod
+    def list_to_json(measure_list):
+        result = []
+        for measure in measure_list:
+            result.append(measure.to_json())
+        return result
