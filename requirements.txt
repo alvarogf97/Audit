@@ -9,3 +9,4 @@ distro
 netifaces
 vulners
 sqlalchemy
+scikit-learn

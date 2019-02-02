@@ -36,10 +36,8 @@ def network_analysis(processes_active, new: bool):
 
     if "sniffer" in processes_active.keys():
         result["code"] = 0
-        result["data"] = "collecting information. Remaining time: " \
-                         + str(max(Environment().time_retrieve_network_sniffer
-                                   - (time.time() - processes_active["sniffer"][1]), 0)) \
-                         + "s"
+        queue = processes_active["sniffer"][2]
+        result["data"] = queue.get()
     elif not os.path.isfile(Environment().path_streams + "/data.json") or new:
         current_cwd = os.getcwd()
         try:
@@ -49,11 +47,7 @@ def network_analysis(processes_active, new: bool):
             background_sniffer = multiprocessing.Process(target=get_calibrate_file, args=(queue,))
             background_sniffer.start()
             processes_active["sniffer"] = (background_sniffer, time.time(), queue)
-            result["data"] = "collecting information. Remaining time:: " \
-                             + str(max(Environment().time_analysis_network
-                                       + Environment().time_retrieve_network_sniffer
-                                       - (time.time() - processes_active["sniffer"][1]), 0)) \
-                             + "s"
+            result["data"] = "collecting information"
             result["code"] = 0
         except Exception as e:
             warnings.warn(str(e))
@@ -89,8 +83,6 @@ def network_analysis(processes_active, new: bool):
     return result
 
 
-# sniffer monitoring TCP packets and classified it by ports during x temp(s)
-# and return dict(port:([input],[output]))
 def sniffer(temp):
     import pcap
     # pc will capture network traffic
@@ -121,24 +113,28 @@ def sniffer(temp):
                     # from my ip
                     if ip1 in my_ip:
                         measure = NetworkMeasure(port=sport, size=len(pck_info),
-                                                 hour=str(datetime.utcfromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')),
+                                                 timestamp=ts,
                                                  is_input=False)
                         result["output"].append(measure)
                     # to my ip
                     elif ip2 in my_ip:
                         measure = NetworkMeasure(port=dport, size=len(pck_info),
-                                                 hour=str(datetime.utcfromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')),
+                                                 timestamp=ts,
                                                  is_input=True)
                         result["input"].append(measure)
 
 
 def get_calibrate_file(queue: Queue):
     result = dict()
+    queue.put("collecting packets data")
     data = sniffer(Environment().time_retrieve_network_sniffer)
+    queue.put("packet data collect successfully")
     result["input"] = NetworkMeasure.list_to_json(data["input"])
     result["output"] = NetworkMeasure.list_to_json(data["output"])
     with open(Environment().path_streams + '/data.json', 'w') as fp:
         json.dump(result, fp, sort_keys=True, indent=4)
+    queue.put("data file saved as \"data.json\"")
+    queue.put("generating neuronal network")
     return
 
 
@@ -158,16 +154,18 @@ def get_adapters():
 
 class NetworkMeasure:
 
-    def __init__(self, port, size, hour, is_input):
+    def __init__(self, port, size, timestamp, is_input):
         self.port = port
         self.size = size
-        self.hour = hour
+        self.timestamp = timestamp
+        self.hour = str(datetime.utcfromtimestamp(self.timestamp).strftime('%Y-%m-%d %H:%M:%S'))
         self.is_input = is_input
 
     def to_json(self):
         result = dict()
         result["port"] = self.port
         result["size"] = self.size
+        result["timestamp"] = self.timestamp
         result["hour"] = str(self.hour)
         result["is_input"] = self.is_input
         return result
@@ -177,4 +175,23 @@ class NetworkMeasure:
         result = []
         for measure in measure_list:
             result.append(measure.to_json())
+        return result
+
+    @staticmethod
+    def load_from_json(json_file):
+        result = dict()
+        result["input"] = []
+        result["output"] = []
+        with open(json_file, "r") as f:
+            json_buffer = json.loads(f.read())
+            for json_measure_input in json_buffer["input"]:
+                result["input"].append(NetworkMeasure(port=json_measure_input["port"],
+                                                        size=json_measure_input["size"],
+                                                        timestamp=json_measure_input["timestamp"],
+                                                        is_input=json_measure_input["is_input"]))
+            for json_measure_output in json_buffer["output"]:
+                result["output"].append(NetworkMeasure(port=json_measure_output["port"],
+                                                        size=json_measure_output["size"],
+                                                        timestamp=json_measure_output["timestamp"],
+                                                        is_input=json_measure_output["is_input"]))
         return result

@@ -7,7 +7,6 @@ import psutil
 from audit.core.environment import Environment
 
 
-# shell_command execute on client side command and send response to client
 def shell_command(command):
     with open(Environment().path_streams + "/stdout.txt", "wb") as stdout_file, \
             open(Environment().path_streams + "/stderr.txt", "wb") as stderr_file, \
@@ -19,7 +18,6 @@ def shell_command(command):
         handle.wait()
 
 
-# exec_command execute on back side command and send response to client
 def exec_command(command: str):
     result = dict()
     shell_command(command)
@@ -39,7 +37,6 @@ def exec_command(command: str):
     return result
 
 
-# communicate get streams from subprocess which is executing shell command
 def communicate():
     stdout_file = codecs.open(Environment().path_streams + "/stdout.txt",
                               mode="rb", encoding=Environment().codec_type,
@@ -54,7 +51,6 @@ def communicate():
     return stdout, stderr
 
 
-# cd change current working directory
 def cd(new_cwd: str):
     result = dict()
     try:
@@ -68,7 +64,6 @@ def cd(new_cwd: str):
     return result
 
 
-# get_processes: retrieve information about system processes
 def get_processes():
     result = dict()
     result["satus"] = True
@@ -79,7 +74,6 @@ def get_processes():
     return result
 
 
-# kill_process: kill process by pid
 def kill_process(pid: str):
     result = dict()
     try:
