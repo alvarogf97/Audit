@@ -4,10 +4,12 @@ import os
 import socket
 import time
 import warnings
-from datetime import datetime
-from multiprocessing import Queue
 import psutil
 import dpkt
+import numpy as np
+import lsanomaly
+from datetime import datetime
+from multiprocessing import Queue
 from audit.core.environment import Environment
 
 
@@ -53,7 +55,6 @@ def network_analysis(processes_active, new: bool):
             warnings.warn(str(e))
             result["code"] = 1
             if "installer" in processes_active.keys():
-                # communicate with subprocess
                 queue = processes_active["installer"][2]
                 queue_msg = queue.get()
                 if queue_msg == "fail":
@@ -61,7 +62,6 @@ def network_analysis(processes_active, new: bool):
                     result["code"] = -1
                 result["installer"] = queue_msg
             else:
-                # install pcap
                 queue = multiprocessing.Queue()
                 installer = multiprocessing.Process(target=Environment().packetManager.install_package,
                                                     args=(queue, "pcap"))
@@ -71,52 +71,48 @@ def network_analysis(processes_active, new: bool):
         finally:
             os.chdir(current_cwd)
     else:
+        if Environment().networkNeuralClassifierManager is None:
+            Environment().networkNeuralClassifierManager = \
+                NetworkNeuralClassifierManager(Environment().path_streams + '/data.json')
         result["code"] = 2
         result["data"] = dict()
         sniffer_data = sniffer(Environment().time_retrieve_network_sniffer)
         result["data"]["input"] = NetworkMeasure.list_to_json(sniffer_data["input"])
         result["data"]["output"] = NetworkMeasure.list_to_json(sniffer_data["output"])
-        #TODO
-        # dos listas de input y output como regresion estadistica (predecir evolucion)
-        # analisis de las medidas con el fichero data para comprobar anomalias
+        result["data"]["abnormal_input"] = NetworkMeasure.list_to_json(Environment().networkNeuralClassifierManager.check_measure_list(sniffer_data["input"]))
+        result["data"]["abnormal_output"] = NetworkMeasure.list_to_json(Environment().networkNeuralClassifierManager.check_measure_list(sniffer_data["input"]))
+        return result
 
     return result
 
 
-def sniffer(temp):
+def sniffer(temp, queue=None):
     import pcap
-    # pc will capture network traffic
     result = dict()
     result["input"] = []
     result["output"] = []
     init_time = time.time()
     my_ip = Environment().private_ip
     pc = pcap.pcap(name=Environment().default_adapter)
-    # as long as there are new packets
-    for ts, pkt in pc:  # timestamp , packet
-        # check time passed
+    for ts, pkt in pc:
+        if queue:
+            queue.put("Remaining time: " + str(round(time.time() - init_time, 1)))
         if time.time() - init_time >= temp:
             return result
             break
         eth = dpkt.ethernet.Ethernet(pkt)
-        ip = eth.data  # now data is ip
+        ip = eth.data
         if ip.__class__ == dpkt.ip.IP:
-            # source IP address and Destination address
             ip1, ip2 = map(socket.inet_ntoa, [ip.src, ip.dst])
-            # is the protocol TCP? (tcp has ports)
-            if ip.p == socket.IPPROTO_TCP:  # TCP traffic
+            if ip.p == socket.IPPROTO_TCP:
                 pck_info = ip.data
-                # print(ip.__bytes__)
-                # source IP port and Destination port
                 sport, dport = [pck_info.sport, pck_info.dport]
                 if len(pck_info.data) > 0:
-                    # from my ip
                     if ip1 in my_ip:
                         measure = NetworkMeasure(port=sport, size=len(pck_info),
                                                  timestamp=ts,
                                                  is_input=False)
                         result["output"].append(measure)
-                    # to my ip
                     elif ip2 in my_ip:
                         measure = NetworkMeasure(port=dport, size=len(pck_info),
                                                  timestamp=ts,
@@ -127,10 +123,10 @@ def sniffer(temp):
 def get_calibrate_file(queue: Queue):
     result = dict()
     queue.put("collecting packets data")
-    data = sniffer(Environment().time_retrieve_network_sniffer)
+    data = sniffer(60, queue)
     queue.put("packet data collect successfully")
-    result["input"] = NetworkMeasure.list_to_json(data["input"])
-    result["output"] = NetworkMeasure.list_to_json(data["output"])
+    result["input"] = NetworkMeasure.list_to_array_data(data["input"])
+    result["output"] = NetworkMeasure.list_to_array_data(data["output"])
     with open(Environment().path_streams + '/data.json', 'w') as fp:
         json.dump(result, fp, sort_keys=True, indent=4)
     queue.put("data file saved as \"data.json\"")
@@ -152,13 +148,52 @@ def get_adapters():
         raise Exception("platform not supported")
 
 
+class NetworkNeuralClassifierManager:
+
+    def __init__(self, path_file_data):
+        with open(path_file_data, "r") as f:
+            self.data_dict = json.loads(f.read())
+        self.input_classifier = self.generate_neural_classifier(data_list=self.data_dict["input"])
+        self.output_classifier = self.generate_neural_classifier(data_list=self.data_dict["output"])
+
+    @staticmethod
+    def generate_neural_classifier(data_list):
+        x_train = np.array(data_list)
+        clf = lsanomaly.LSAnomaly()
+        clf.fit(x_train)
+        return clf
+
+    def check_measure_list(self, measure_list):
+        result = []
+        np_array = np.array(NetworkMeasure.list_to_array_data(measure_list))
+        anomalies = [self.input_classifier.predict(np_array), self.output_classifier.predict(np_array)]
+        for x in range(0, len(anomalies)):
+            if anomalies[x] == 'anomaly':
+                result.append(measure_list[x])
+        return result
+
+    def add_exception(self, measure):
+        result = dict()
+        measure = NetworkMeasure.get_from_json(measure)
+        if measure.is_input:
+            self.data_dict["input"].append(measure.to_array_data())
+            self.input_classifier = self.generate_neural_classifier(self.data_dict["input"])
+        else:
+            self.data_dict["output"].append(measure.to_array_data())
+            self.output_classifier = self.generate_neural_classifier(self.data_dict["output"])
+        result["status"] = True
+        result["data"] = ""
+        return result
+
+
 class NetworkMeasure:
 
     def __init__(self, port, size, timestamp, is_input):
         self.port = port
         self.size = size
         self.timestamp = timestamp
-        self.hour = str(datetime.utcfromtimestamp(self.timestamp).strftime('%Y-%m-%d %H:%M:%S'))
+        self.hour = str(datetime.utcfromtimestamp(self.timestamp).strftime('%H:%M:%S'))
+        self.seconds = sum(x * int(t) for x, t in zip([3600, 60, 1], self.hour.split(":")))
         self.is_input = is_input
 
     def to_json(self):
@@ -170,6 +205,16 @@ class NetworkMeasure:
         result["is_input"] = self.is_input
         return result
 
+    def to_array_data(self):
+        return [self.port, self.size, self.seconds]
+
+    @staticmethod
+    def list_to_array_data(measure_list):
+        result = []
+        for measure in measure_list:
+            result.append(measure.to_array_data())
+        return result
+
     @staticmethod
     def list_to_json(measure_list):
         result = []
@@ -178,20 +223,6 @@ class NetworkMeasure:
         return result
 
     @staticmethod
-    def load_from_json(json_file):
-        result = dict()
-        result["input"] = []
-        result["output"] = []
-        with open(json_file, "r") as f:
-            json_buffer = json.loads(f.read())
-            for json_measure_input in json_buffer["input"]:
-                result["input"].append(NetworkMeasure(port=json_measure_input["port"],
-                                                        size=json_measure_input["size"],
-                                                        timestamp=json_measure_input["timestamp"],
-                                                        is_input=json_measure_input["is_input"]))
-            for json_measure_output in json_buffer["output"]:
-                result["output"].append(NetworkMeasure(port=json_measure_output["port"],
-                                                        size=json_measure_output["size"],
-                                                        timestamp=json_measure_output["timestamp"],
-                                                        is_input=json_measure_output["is_input"]))
-        return result
+    def get_from_json(json_measure):
+        return NetworkMeasure(port=json_measure["port"], size=json_measure["size"],
+                              timestamp=json_measure["timestamp"], is_input=json_measure["is_input"])

@@ -10,3 +10,5 @@ netifaces
 vulners
 sqlalchemy
 scikit-learn
+lsanomaly
+numpy

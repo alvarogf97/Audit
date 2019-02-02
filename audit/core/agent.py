@@ -200,6 +200,17 @@ class Agent:
                             """
                             self.connection.send_msg(self.parse_json(network_analysis(self.active_processes, True)))
 
+                        elif request_query["command"].startswith("add network measure exception"):
+                            """
+                                response =
+                                    {
+                                        "status" : boolean
+                                        "data" : str
+                                    }
+                            """
+                            self.connection.send_msg(self.parse_json(Environment().networkNeuralClassifierManager.
+                                                                     add_exception(request_query["args"])))
+
                         elif request_query["command"].startswith("network analysis"):
                             """
                                 response =
