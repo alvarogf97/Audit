@@ -327,7 +327,6 @@ class Agent:
 
     @staticmethod
     def parse_json(json_item) -> str:
-        print(json_item)
         return json.dumps(json_item, sort_keys=True, indent=4)
 
     @staticmethod

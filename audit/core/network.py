@@ -83,7 +83,7 @@ def network_analysis(processes_active, new: bool):
                 NetworkNeuralClassifierManager(Environment().path_streams + '/data.json')
         result["data"] = dict()
         sniffer_data = sniffer(Environment().time_analysis_network)
-        if len(sniffer_data["input"]) > 3 and len(sniffer_data["output"]) > 3:
+        if len(sniffer_data["input"]) > 1 and len(sniffer_data["output"]) > 1:
             result["code"] = 1
             result["data"]["input"] = NetworkMeasure.list_to_json(sniffer_data["input"])
             result["data"]["output"] = NetworkMeasure.list_to_json(sniffer_data["output"])
