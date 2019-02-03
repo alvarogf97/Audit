@@ -32,6 +32,13 @@ def get_ports_open_by_processes():
     return result
 
 
+def get_process_name_by_port(port):
+    for x in psutil.net_connections():
+        if x.laddr.port == port:
+            return psutil.Process(x.pid).name()
+    return ""
+
+
 def network_analysis(processes_active, new: bool):
     result = dict()
     result["status"] = True
@@ -79,8 +86,12 @@ def network_analysis(processes_active, new: bool):
         sniffer_data = sniffer(Environment().time_retrieve_network_sniffer)
         result["data"]["input"] = NetworkMeasure.list_to_json(sniffer_data["input"])
         result["data"]["output"] = NetworkMeasure.list_to_json(sniffer_data["output"])
-        result["data"]["abnormal_input"] = NetworkMeasure.list_to_json(Environment().networkNeuralClassifierManager.check_measure_list(sniffer_data["input"]))
-        result["data"]["abnormal_output"] = NetworkMeasure.list_to_json(Environment().networkNeuralClassifierManager.check_measure_list(sniffer_data["input"]))
+        result["data"]["abnormal_input"] = NetworkMeasure.list_to_json(Environment().
+                                                                       networkNeuralClassifierManager.
+                                                                       check_measure_list(sniffer_data["input"]))
+        result["data"]["abnormal_output"] = NetworkMeasure.list_to_json(Environment().
+                                                                        networkNeuralClassifierManager.
+                                                                        check_measure_list(sniffer_data["input"]))
         return result
 
     return result
@@ -190,6 +201,7 @@ class NetworkMeasure:
 
     def __init__(self, port, size, timestamp, is_input):
         self.port = port
+        self.process_name = get_process_name_by_port(port)
         self.size = size
         self.timestamp = timestamp
         self.hour = str(datetime.utcfromtimestamp(self.timestamp).strftime('%H:%M:%S'))
@@ -203,6 +215,7 @@ class NetworkMeasure:
         result["timestamp"] = self.timestamp
         result["hour"] = str(self.hour)
         result["is_input"] = self.is_input
+        result["process_name"] = self.process_name
         return result
 
     def to_array_data(self):
