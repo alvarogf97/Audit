@@ -60,14 +60,14 @@ def network_analysis(processes_active, new: bool):
             result["code"] = 0
         except Exception as e:
             warnings.warn(str(e))
-            result["code"] = 1
+            result["code"] = 0
             if "installer" in processes_active.keys():
                 queue = processes_active["installer"][2]
                 queue_msg = queue.get()
                 if queue_msg == "fail":
                     processes_active["installer"][0].terminate()
                     result["code"] = -1
-                result["installer"] = queue_msg
+                result["data"] = queue_msg
             else:
                 queue = multiprocessing.Queue()
                 installer = multiprocessing.Process(target=Environment().packetManager.install_package,
@@ -81,19 +81,20 @@ def network_analysis(processes_active, new: bool):
         if Environment().networkNeuralClassifierManager is None:
             Environment().networkNeuralClassifierManager = \
                 NetworkNeuralClassifierManager(Environment().path_streams + '/data.json')
-        result["code"] = 2
         result["data"] = dict()
-        sniffer_data = sniffer(Environment().time_retrieve_network_sniffer)
-        result["data"]["input"] = NetworkMeasure.list_to_json(sniffer_data["input"])
-        result["data"]["output"] = NetworkMeasure.list_to_json(sniffer_data["output"])
-        result["data"]["abnormal_input"] = NetworkMeasure.list_to_json(Environment().
-                                                                       networkNeuralClassifierManager.
-                                                                       check_measure_list(sniffer_data["input"]))
-        result["data"]["abnormal_output"] = NetworkMeasure.list_to_json(Environment().
-                                                                        networkNeuralClassifierManager.
-                                                                        check_measure_list(sniffer_data["input"]))
-        return result
-
+        sniffer_data = sniffer(Environment().time_analysis_network)
+        if len(sniffer_data["input"]) > 3 and len(sniffer_data["output"]) > 3:
+            result["code"] = 1
+            result["data"]["input"] = NetworkMeasure.list_to_json(sniffer_data["input"])
+            result["data"]["output"] = NetworkMeasure.list_to_json(sniffer_data["output"])
+            result["data"]["abnormal_input"] = NetworkMeasure.list_to_json(Environment().
+                                                                      networkNeuralClassifierManager.
+                                                                      check_measure_list(sniffer_data["input"]))
+            result["data"]["abnormal_output"] = NetworkMeasure.list_to_json(Environment().
+                                                                      networkNeuralClassifierManager.
+                                                                      check_measure_list(sniffer_data["input"]))
+        else:
+            result["code"] = 2
     return result
 
 
@@ -107,7 +108,7 @@ def sniffer(temp, queue=None):
     pc = pcap.pcap(name=Environment().default_adapter)
     for ts, pkt in pc:
         if queue:
-            queue.put("Remaining time: " + str(round(time.time() - init_time, 1)))
+            queue.put("Recollecting data: " + str(round(((time.time() - init_time)*100 / temp), 1)) + "%")
         if time.time() - init_time >= temp:
             return result
             break
@@ -134,7 +135,7 @@ def sniffer(temp, queue=None):
 def get_calibrate_file(queue: Queue):
     result = dict()
     queue.put("collecting packets data")
-    data = sniffer(60, queue)
+    data = sniffer(Environment().time_retrieve_network_sniffer, queue)
     queue.put("packet data collect successfully")
     result["input"] = NetworkMeasure.list_to_array_data(data["input"])
     result["output"] = NetworkMeasure.list_to_array_data(data["output"])
@@ -225,7 +226,9 @@ class NetworkMeasure:
     def list_to_array_data(measure_list):
         result = []
         for measure in measure_list:
-            result.append(measure.to_array_data())
+            measure_data = measure.to_array_data()
+            if measure_data not in result:
+                result.append(measure_data)
         return result
 
     @staticmethod

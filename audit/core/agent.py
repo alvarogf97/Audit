@@ -76,7 +76,6 @@ class Agent:
 
                     while request_query["command"] != "exit":
                         check_active_processes(self.active_processes)
-                        self.queue.put("logger_info@command: " + request_query["command"])
                         request_query = self.parse_string(self.connection.recv_msg())
 
                         if request_query["command"].startswith("cd"):
@@ -328,6 +327,7 @@ class Agent:
 
     @staticmethod
     def parse_json(json_item) -> str:
+        print(json_item)
         return json.dumps(json_item, sort_keys=True, indent=4)
 
     @staticmethod
