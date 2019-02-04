@@ -179,7 +179,6 @@ class NetworkNeuralClassifierManager:
         result = []
         np_array = np.array(NetworkMeasure.list_to_array_data(measure_list))
         anomalies = [self.input_classifier.predict(np_array), self.output_classifier.predict(np_array)]
-        print(anomalies)
         for x in range(0, len(anomalies)):
             if anomalies[0][x] == 'anomaly':
                 result.append(measure_list[x])
