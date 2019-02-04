@@ -179,8 +179,9 @@ class NetworkNeuralClassifierManager:
         result = []
         np_array = np.array(NetworkMeasure.list_to_array_data(measure_list))
         anomalies = [self.input_classifier.predict(np_array), self.output_classifier.predict(np_array)]
+        print(anomalies)
         for x in range(0, len(anomalies)):
-            if anomalies[x] == 'anomaly':
+            if anomalies[0][x] == 'anomaly':
                 result.append(measure_list[x])
         return result
 
@@ -193,6 +194,8 @@ class NetworkNeuralClassifierManager:
         else:
             self.data_dict["output"].append(measure.to_array_data())
             self.output_classifier = self.generate_neural_classifier(self.data_dict["output"])
+        with open(Environment().path_streams + '/data.json', 'w') as fp:
+            json.dump(self.data_dict, fp, sort_keys=True, indent=4)
         result["status"] = True
         result["data"] = ""
         return result
