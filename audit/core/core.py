@@ -103,3 +103,10 @@ def check_active_processes(process_active):
     for name in revocation_list:
         process_active[name][2].close()
         process_active.pop(name, None)  # Process is finish
+
+
+def string_to_ascii(string):
+    if string == '':
+        return 0
+    else:
+        return float(''.join(str(ord(c)) for c in string))

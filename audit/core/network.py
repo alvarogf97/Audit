@@ -10,6 +10,7 @@ import numpy as np
 import lsanomaly
 from datetime import datetime
 from multiprocessing import Queue
+from audit.core.core import string_to_ascii
 from audit.core.environment import Environment
 
 
@@ -35,7 +36,10 @@ def get_ports_open_by_processes():
 def get_process_name_by_port(port):
     for x in psutil.net_connections():
         if x.laddr.port == port:
-            return psutil.Process(x.pid).name()
+            try:
+                return psutil.Process(x.pid).name()
+            except Exception as e:
+                warnings.warn(str(e))
     return ""
 
 
@@ -89,10 +93,10 @@ def network_analysis(processes_active, new: bool):
             result["data"]["output"] = NetworkMeasure.list_to_json(sniffer_data["output"])
             result["data"]["abnormal_input"] = NetworkMeasure.list_to_json(Environment().
                                                                       networkNeuralClassifierManager.
-                                                                      check_measure_list(sniffer_data["input"]))
+                                                                      check_measure_list(sniffer_data["input"], True))
             result["data"]["abnormal_output"] = NetworkMeasure.list_to_json(Environment().
                                                                       networkNeuralClassifierManager.
-                                                                      check_measure_list(sniffer_data["input"]))
+                                                                      check_measure_list(sniffer_data["input"], False))
         else:
             result["code"] = 2
     return result
@@ -175,14 +179,17 @@ class NetworkNeuralClassifierManager:
         clf.fit(x_train)
         return clf
 
-    def check_measure_list(self, measure_list):
+    def check_measure_list(self, measure_list, is_input):
         result = []
         np_array = np.array(NetworkMeasure.list_to_array_data(measure_list))
-        anomalies = [self.input_classifier.predict(np_array), self.output_classifier.predict(np_array)]
+        if is_input:
+            anomalies = self.input_classifier.predict(np_array)
+        else:
+            anomalies = self.output_classifier.predict(np_array)
         for x in range(0, len(anomalies)):
-            if anomalies[0][x] == 'anomaly':
+            if anomalies[x] == 'anomaly':
                 result.append(measure_list[x])
-        return result
+        return NetworkMeasure.remove_eq_list(result)
 
     def add_exception(self, measure):
         result = dict()
@@ -221,8 +228,18 @@ class NetworkMeasure:
         result["process_name"] = self.process_name
         return result
 
+    def __eq__(self, o: object) -> bool:
+        result = False
+        if isinstance(o, NetworkMeasure):
+            result = self.is_input == o.is_input and \
+                     self.process_name == o.process_name and \
+                     self.hour == o.hour and \
+                     self.port == o.port and \
+                     self.size == o.size
+        return result
+
     def to_array_data(self):
-        return [self.port, self.size, self.seconds]
+        return [self.port, self.size, self.seconds, string_to_ascii(self.process_name)]
 
     @staticmethod
     def list_to_array_data(measure_list):
@@ -231,6 +248,14 @@ class NetworkMeasure:
             measure_data = measure.to_array_data()
             if measure_data not in result:
                 result.append(measure_data)
+        return result
+
+    @staticmethod
+    def remove_eq_list(measure_list):
+        result = []
+        for measure in measure_list:
+            if measure not in result:
+                result.append(measure)
         return result
 
     @staticmethod
