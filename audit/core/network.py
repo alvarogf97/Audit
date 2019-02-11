@@ -92,11 +92,13 @@ def network_analysis(processes_active, new: bool):
             result["data"]["input"] = NetworkMeasure.list_to_json(sniffer_data["input"])
             result["data"]["output"] = NetworkMeasure.list_to_json(sniffer_data["output"])
             result["data"]["abnormal_input"] = NetworkMeasure.list_to_json(Environment().
-                                                                      networkNeuralClassifierManager.
-                                                                      check_measure_list(sniffer_data["input"], True))
+                                                                           networkNeuralClassifierManager.
+                                                                           check_measure_list(sniffer_data["input"],
+                                                                                              True))
             result["data"]["abnormal_output"] = NetworkMeasure.list_to_json(Environment().
-                                                                      networkNeuralClassifierManager.
-                                                                      check_measure_list(sniffer_data["input"], False))
+                                                                            networkNeuralClassifierManager.
+                                                                            check_measure_list(sniffer_data["input"],
+                                                                                               False))
         else:
             result["code"] = 2
     return result
@@ -112,7 +114,7 @@ def sniffer(temp, queue=None):
     pc = pcap.pcap(name=Environment().default_adapter)
     for ts, pkt in pc:
         if queue:
-            queue.put("Recollecting data: " + str(round(((time.time() - init_time)*100 / temp), 1)) + "%")
+            queue.put("Recollecting data: " + str(round(((time.time() - init_time) * 100 / temp), 1)) + "%")
         if time.time() - init_time >= temp:
             return result
             break
