@@ -7,6 +7,7 @@ import re
 from audit.core import environment
 from queue import Queue
 from audit.core.agent import Agent
+from audit.core.environment import check_system
 from audit.database.user import init_db
 from audit.gui.userPanel import UserPanel
 
@@ -26,7 +27,6 @@ class MainPanel(wx.Panel):
         self.server_info = wx.TextCtrl(self, pos=(170, 10), size=(300, 105), style=wx.TE_MULTILINE | wx.TE_READONLY)
         self.label = wx.StaticText(self, label="Server log:", pos=(227, 160))
         self.logger = wx.TextCtrl(self, pos=(10, 180), size=(460, 200), style=wx.TE_MULTILINE | wx.TE_READONLY)
-
         self.Bind(wx.EVT_BUTTON, self.on_click_start_button, self.start_button)
         self.Bind(wx.EVT_BUTTON, self.on_click_user_button, self.user_button)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.on_close)
@@ -58,6 +58,12 @@ class MainPanel(wx.Panel):
     def update_logger(self, msg):
         self.logger.AppendText(msg + "\n")
 
+    def update_rem_logger(self, msg):
+        entries = str(self.logger.GetValue())
+        entry_list = entries.split("\n")
+        entries = "\n".join(entry_list[:len(entry_list) - 2]) + "\n" + msg + "\n"
+        self.logger.SetValue(entries)
+
     def clean_loggers(self):
         self.server_info.SetValue("")
         self.logger.SetValue("")
@@ -74,6 +80,7 @@ class MainPanel(wx.Panel):
                                                                    self.is_send_check,
                                                                    self.email_edit.GetValue()))
                 self.agent_process.start()
+                self.start_button.Enable(False)
                 self.started = True
                 self.queue = queue
                 self.start_button.SetLabel("Stop")
@@ -100,8 +107,13 @@ class MainPanel(wx.Panel):
                     last_msg_split = last_msg.split("@")
                     if last_msg_split[0] == "server_info":
                         self.update_server_info(last_msg_split[1])
-                    else:
+                    elif last_msg_split[0] == "logger_info":
                         self.update_logger(last_msg_split[1])
+                    elif last_msg_split[0] == "logger_update":
+                        self.update_rem_logger(last_msg_split[1])
+                    elif last_msg_split[0] == "f_check":
+                        self.clean_loggers()
+                        self.start_button.Enable(True)
                     last_msg = self.queue.get(timeout=0.1)
             except Exception as e:
                 warnings.warn(str(e))
@@ -152,7 +164,10 @@ class MainPanel(wx.Panel):
 
 def start_agent(queue: Queue, port: int, open_on_router: bool, send_mail: bool, mail: str):
     agent = Agent(port, queue, open_on_router=open_on_router, send_mail=send_mail, mail=mail)
-    agent.serve_forever()
+    response = check_system(queue)
+    queue.put("f_check@checked")
+    if response:
+        agent.serve_forever()
 
 
 def get_path_icon():

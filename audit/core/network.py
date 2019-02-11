@@ -51,7 +51,7 @@ def network_analysis(processes_active, new: bool):
         result["code"] = 0
         queue = processes_active["sniffer"][2]
         result["data"] = queue.get()
-    elif not os.path.isfile(Environment().path_streams + "/data.json") or new:
+    elif not os.path.isfile(Environment().path_streams + "/network_data.json") or new:
         current_cwd = os.getcwd()
         try:
             import pcap
@@ -84,7 +84,7 @@ def network_analysis(processes_active, new: bool):
     else:
         if Environment().networkNeuralClassifierManager is None:
             Environment().networkNeuralClassifierManager = \
-                NetworkNeuralClassifierManager(Environment().path_streams + '/data.json')
+                NetworkNeuralClassifierManager(Environment().path_streams + '/network_data.json')
         result["data"] = dict()
         sniffer_data = sniffer(Environment().time_analysis_network)
         if len(sniffer_data["input"]) > 1 and len(sniffer_data["output"]) > 1:
@@ -97,14 +97,14 @@ def network_analysis(processes_active, new: bool):
                                                                                               True))
             result["data"]["abnormal_output"] = NetworkMeasure.list_to_json(Environment().
                                                                             networkNeuralClassifierManager.
-                                                                            check_measure_list(sniffer_data["input"],
+                                                                            check_measure_list(sniffer_data["output"],
                                                                                                False))
         else:
             result["code"] = 2
     return result
 
 
-def sniffer(temp, queue=None):
+def sniffer(temp, queue=None, queue_type=""):
     import pcap
     result = dict()
     result["input"] = []
@@ -114,7 +114,7 @@ def sniffer(temp, queue=None):
     pc = pcap.pcap(name=Environment().default_adapter)
     for ts, pkt in pc:
         if queue:
-            queue.put("Recollecting data: " + str(round(((time.time() - init_time) * 100 / temp), 1)) + "%")
+            queue.put(queue_type + "Recollecting data: " + str(round(((time.time() - init_time) * 100 / temp), 1)) + "%")
         if time.time() - init_time >= temp:
             return result
             break
@@ -145,9 +145,9 @@ def get_calibrate_file(queue: Queue):
     queue.put("packet data collect successfully")
     result["input"] = NetworkMeasure.list_to_array_data(data["input"])
     result["output"] = NetworkMeasure.list_to_array_data(data["output"])
-    with open(Environment().path_streams + '/data.json', 'w') as fp:
+    with open(Environment().path_streams + '/network_data.json', 'w') as fp:
         json.dump(result, fp, sort_keys=True, indent=4)
-    queue.put("data file saved as \"data.json\"")
+    queue.put("data file saved as \"network_data.json\"")
     queue.put("generating neuronal network")
     return
 
@@ -202,7 +202,7 @@ class NetworkNeuralClassifierManager:
         else:
             self.data_dict["output"].append(measure.to_array_data())
             self.output_classifier = self.generate_neural_classifier(self.data_dict["output"])
-        with open(Environment().path_streams + '/data.json', 'w') as fp:
+        with open(Environment().path_streams + '/network_data.json', 'w') as fp:
             json.dump(self.data_dict, fp, sort_keys=True, indent=4)
         result["status"] = True
         result["data"] = ""

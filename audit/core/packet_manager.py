@@ -83,14 +83,14 @@ class PacketManager:
     @abstractmethod
     def get_installed_packets(self) -> List[Package]: pass
 
-    def get_vulnerabilities(self, queue: Queue) -> Dict[Package, List[Vulnerability]]:
+    def get_vulnerabilities(self, queue: Queue, queue_type="") -> Dict[Package, List[Vulnerability]]:
         queue.put("getting installed packets")
         packages = self.get_installed_packets()
         packages.append(Package(Environment().os, Environment().system_version.split(".")[0]))
         vulnerabilities = dict()
         packet_counter = 1
         for packet in packages:
-            queue.put("examined " + str(packet_counter) + "/" + str(len(packages)))
+            queue.put(queue_type + "examined " + str(packet_counter) + "/" + str(len(packages)))
             vulners_api = vulners.Vulners(api_key=Environment().vulners_api_key)
             search = None
             while search is None:
@@ -115,15 +115,15 @@ class PacketManager:
         return vulnerabilities
 
     # install_package will install package in system
-    def install_package(self, queue: Queue, name: str):
+    def install_package(self, queue: Queue, name: str, queue_type=""):
         cwd = os.getcwd()
         try:
-            queue.put(name + " will be installed on system")
+            queue.put(queue_type + name + " will be installed on system")
             os.chdir(self.path_download_files)
             url, filename, commands = self.applications[name]
             if name in self.dependencies.keys():
                 # first we need to install dependencies
-                queue.put("dependencies: " + str(self.dependencies[name]))
+                queue.put(queue_type + "dependencies: " + str(self.dependencies[name]))
                 for dependency in self.dependencies[name]:
                     self.install_package(queue, dependency)
             requirement = requests.get(url)
@@ -138,11 +138,11 @@ class PacketManager:
                 if stderr == "":
                     raise Exception
                 else:
-                    queue.put(stdout)
+                    queue.put(queue_type + stdout)
             restart()
         except Exception as e:
             warnings.warn(str(e))
-            queue.put("fail")
+            queue.put(queue_type + "fail")
         os.chdir(cwd)
         return
 
@@ -156,8 +156,8 @@ class PacketManager:
             json.dump(res, fp, sort_keys=True, indent=4)
         return
 
-    def retrieve_vulners(self, queue: Queue):
-        self.remap_keys(self.get_vulnerabilities(queue))
+    def retrieve_vulners(self, queue: Queue, queue_type=""):
+        self.remap_keys(self.get_vulnerabilities(queue, queue_type=queue_type))
 
     def scan(self, processes_active, new: bool):
         result = dict()

@@ -5,7 +5,6 @@ import socket
 from audit.core.environment import Environment
 
 
-# return local wifi interface ip and device name
 def get_ip_info():
     ip_device = netifaces.gateways()['default'][netifaces.AF_INET][1]
     ip_gateway = netifaces.gateways()['default'][netifaces.AF_INET][0]
@@ -13,7 +12,6 @@ def get_ip_info():
     return ip, ip_device, ip_gateway
 
 
-# send_IP: sended the IP(private and public) and machine name via e-mail
 def send_ip(port, mail):
     gmail_user = 'reaperanalyzer@gmail.com'
     gmail_password = '@dminth0r'

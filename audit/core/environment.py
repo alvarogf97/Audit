@@ -1,8 +1,10 @@
 import os
 import sys
 import platform
+import json
 import warnings
 import requests
+from queue import Queue
 
 
 class Environment:
@@ -10,7 +12,7 @@ class Environment:
     class __Environment:
         def __init__(self):
 
-            self.vulners_api_key = "7GY764U8YFNSR30S01QSCX7X8VJ78U28RBXVGNHR0YW8XELGSGKDGCQESKE2W23K"
+            self.vulners_api_key = "OBE85DLS8WSOP5FM1DFWPUIDXK1D32UIS8FP3J4JG7IOKF9JP0WY0KH6YCTRC1UP"
             self.base_path = os.getcwd()
             self.path_certs = get_path_certs(self.base_path)
             self.path_download_files = self.base_path + "/resources/downloads"
@@ -37,8 +39,10 @@ class Environment:
 
             self.private_ip = features["local_ip"]
             self.public_ip = "could not resolve public ip due to network error"
+            self.has_internet = False
             try:
                 self.public_ip = str(requests.get('https://api.ipify.org').text)
+                self.has_internet = True
             except Exception as e:
                 warnings.warn(str(e))
             self.os = features["os"]
@@ -110,3 +114,53 @@ def define_managers():
         Environment().__setattr__("firewallManager", DarwinFirewallManager())
     else:
         raise Exception("platform not supported")
+
+
+def check_system(queue: Queue):
+    from audit.core.network import sniffer, NetworkMeasure, NetworkNeuralClassifierManager
+
+    if not Environment().has_internet:
+        queue.put("logger_info@Internet connection ---> NO")
+        queue.put("logger_info@please verify your connection and try it again!")
+        return False
+    else:
+        queue.put("logger_info@Internet connection ---> OK")
+    try:
+        import pcap
+        queue.put("logger_info@Pcap installed ---> OK")
+    except Exception as e:
+        queue.put("logger_info@Pcap installed ---> NO")
+        Environment().packetManager.install_package(queue, "pcap", queue_type="logger_info@")
+        queue.put("logger_info@You need to reinitialize your system!")
+        return False
+    if not os.path.isfile(Environment().path_streams + "/network_data.json"):
+        result = dict()
+        queue.put("logger_info@generating network files... let's start use internet")
+        queue.put("logger_info@")
+        data = sniffer(Environment().time_retrieve_network_sniffer, queue, queue_type="logger_update@")
+        queue.put("logger_info@network information collected successfully")
+        result["input"] = NetworkMeasure.list_to_array_data(data["input"])
+        result["output"] = NetworkMeasure.list_to_array_data(data["output"])
+        with open(Environment().path_streams + '/network_data.json', 'w') as fp:
+            json.dump(result, fp, sort_keys=True, indent=4)
+        queue.put("logger_info@network structure generated")
+    else:
+        queue.put("logger_info@Network structure ---> OK")
+    if Environment().networkNeuralClassifierManager is None:
+        queue.put("logger_info@generating anomaly model...")
+        Environment().networkNeuralClassifierManager = \
+            NetworkNeuralClassifierManager(Environment().path_streams + '/network_data.json')
+        queue.put("logger_info@network anomaly model generated")
+    else:
+        queue.put("logger_info@Anomaly model ---> OK")
+
+    if not os.path.isfile(Environment().path_streams + "/vulners.json"):
+        queue.put("logger_info@generating vulnerabilities model...")
+        queue.put("logger_info@")
+        Environment().packetManager.retrieve_vulners(queue, queue_type="logger_update@")
+        queue.put("logger_info@vulnerabilities model generated")
+    else:
+        queue.put("logger_info@Vulnerabilities model ---> OK")
+    queue.put("logger_info@finishing...")
+    return True
+
