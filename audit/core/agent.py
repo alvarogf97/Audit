@@ -306,7 +306,6 @@ class Agent:
                                 send(self.connection, request_query["command"])
                             except IOError as error:
                                 warnings.warn(str(error))
-                                print(" file not found")
 
                         else:
                             """

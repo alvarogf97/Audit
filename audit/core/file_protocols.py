@@ -21,7 +21,6 @@ def get(connection: Connection, command: str):
             filename = splitted[1]
             connection.send_msg("1")
             send_file(connection, filename)
-            print(filename + " -> has been sended")
 
         else:
             # gets all files from the current directory to current machine path_download_files
@@ -29,7 +28,6 @@ def get(connection: Connection, command: str):
             connection.send_msg(str(len(files)))
             for file in files:
                 send_file(connection, file)
-                print(file + " -> has been sended")
 
     except Exception as e:
         warnings.warn(str(e))
@@ -72,13 +70,11 @@ def send(connection, command):
         filename = connection.recv_msg()
         filepath = splitted[3]
         get_file(connection, filename, filepath)
-        print("received-> " + filename)
 
     elif len(splitted) > 2:
         # filename, path_download_files
         filename = connection.recv_msg()
         get_file(connection, filename)
-        print("received-> " + filename)
 
     else:
         # allfiles, path_download_files
@@ -90,7 +86,6 @@ def send(connection, command):
         while files_processed < files:
             filename = connection.recv_msg()
             get_file(connection, filename)
-            print("received-> " + filename)
             files_processed += 1
 
 

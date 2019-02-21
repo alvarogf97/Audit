@@ -33,7 +33,6 @@ class User(Base):
         query = session.query(User).filter_by(name=name)
         result_user = query.first()
         if not check_password(result_user.password, password):
-            print("not same")
             result_user = None
         session.close()
         return result_user

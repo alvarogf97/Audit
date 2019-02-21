@@ -117,7 +117,6 @@ class WindowsFirewallManager(FirewallManager):
         for key, value in args.items():
             if value != "":
                 command += " " + key + "=" + value
-        print(command)
         result["data"] = exec_command(command)["data"]
         result["status"] = len(result["data"]) < 13
         return result

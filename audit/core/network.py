@@ -40,7 +40,7 @@ def get_process_name_by_port(port):
                 return psutil.Process(x.pid).name()
             except Exception as e:
                 warnings.warn(str(e))
-    return ""
+    return "unidentified"
 
 
 def network_analysis(processes_active, new: bool):
