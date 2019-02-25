@@ -198,7 +198,7 @@ class LinuxFirewallManager(FirewallManager):
         return exec_command("iptables -F " + name)
 
     def add_rule(self, args):
-        chain = " " + self.parameters["chain name"] + args["chain_name"] if args["chain name"] != "" else ""
+        chain = " " + self.parameters["chain name"] + args["chain name"] if args["chain name"] != "" else ""
         origin = " " + self.parameters["origin"] + args["origin"] if args["origin"] != "" else ""
         protocol = " " + self.parameters["protocol"] + args["protocol"] if args["protocol"] != "" else ""
         port = " " + self.parameters["port"] + args["port"] if args["port"] != "" else ""
