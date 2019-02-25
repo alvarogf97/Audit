@@ -4,7 +4,7 @@ ifaddr
 dpkt
 requests
 psutil
-pcap-ct; sys_platform == 'windows'
+pcap-ct; sys_platform == 'win32'
 pypcap; sys_platform == 'linux'
 distro
 netifaces
