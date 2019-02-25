@@ -125,21 +125,22 @@ class PacketManager:
                 # first we need to install dependencies
                 queue.put(queue_type + "dependencies: " + str(self.dependencies[name]))
                 for dependency in self.dependencies[name]:
-                    self.install_package(queue, dependency)
+                    self.install_package(queue, dependency, queue_type=queue_type)
             requirement = requests.get(url)
             with open(filename, "wb") as f:
                 f.write(requirement.content)
             for command in commands:
+                print(command)
                 if command.startswith("cd"):
                     os.chdir(command.split("$")[1])
                 else:
                     shell_command(command)
                 stdout, stderr = communicate()
-                if stderr == "":
+                if stderr != "":
                     raise Exception
                 else:
                     queue.put(queue_type + stdout)
-            restart()
+            # restart()
         except Exception as e:
             warnings.warn(str(e))
             queue.put(queue_type + "fail")

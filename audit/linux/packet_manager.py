@@ -23,7 +23,7 @@ class LinuxPacketManager(PacketManager):
                  ["tar xvzf flex-2.6.3.tar.gz", "cd$./flex-2.6.3", "./configure", "make", "make install"])
         }
         dependencies = {
-                    "pcap": ["bisonte", "flex"]
+                    "pcap": ["bison", "flex"]
                     }
         super().__init__(path_download_files, applications, dependencies)
 
