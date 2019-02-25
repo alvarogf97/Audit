@@ -19,7 +19,7 @@ class LinuxPacketManager(PacketManager):
                  ["tar xvzf bison-3.2.tar.gz", "cd$./bison-3.2", "./configure", "make", "make install"]),
             "flex":
                 ("https://github.com/westes/flex/releases/download/v2.6.3/flex-2.6.3.tar.gz",
-                 "flex",
+                 "flex-2.6.3",
                  ["tar xvzf flex-2.6.3.tar.gz", "cd$./flex-2.6.3", "./configure", "make", "make install"])
         }
         dependencies = {
