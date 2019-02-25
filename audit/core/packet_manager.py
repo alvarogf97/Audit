@@ -140,7 +140,7 @@ class PacketManager:
                     shell_command(command)
                 stdout, stderr = communicate()
                 if stderr.replace("\n", "").replace(" ", "") != "":
-                    raise Exception
+                    queue.put(queue_type + tree_space + stderr)
             # restart()
         except Exception as e:
             warnings.warn(str(e))
