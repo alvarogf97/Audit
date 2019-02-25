@@ -119,7 +119,7 @@ class PacketManager:
         cwd = os.getcwd()
         installed = True
         try:
-            queue.put(queue_type + name + " will be installed on system")
+            queue.put(queue_type + name + tree_space + " will be installed on system")
             os.chdir(self.path_download_files)
             url, filename, commands = self.applications[name]
             if name in self.dependencies.keys():
