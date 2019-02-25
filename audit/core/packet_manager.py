@@ -117,6 +117,7 @@ class PacketManager:
     # install_package will install package in system
     def install_package(self, queue: Queue, name: str, queue_type=""):
         cwd = os.getcwd()
+        installed = True
         try:
             queue.put(queue_type + name + " will be installed on system")
             os.chdir(self.path_download_files)
@@ -138,13 +139,14 @@ class PacketManager:
                 stdout, stderr = communicate()
                 if stderr != "":
                     raise Exception
-                else:
-                    queue.put(queue_type + stdout)
             # restart()
         except Exception as e:
             warnings.warn(str(e))
             queue.put(queue_type + "fail")
+            installed = False
         os.chdir(cwd)
+        if installed:
+            queue.put(queue_type + "installed successfully")
         return
 
     @staticmethod
