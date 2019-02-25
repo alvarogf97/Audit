@@ -45,7 +45,7 @@ class WindowsPacketManager(PacketManager):
             "pcap":
                 ("https://nmap.org/npcap/dist/npcap-0.99-r7.exe",
                  "npcap.exe",
-                 ["npcap.exe"])
+                 [["npcap.exe", "please continue installation with installer..."]])
         }
         dependencies = dict()
         super().__init__(path_download_files, applications, dependencies)

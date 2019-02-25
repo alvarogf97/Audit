@@ -115,7 +115,7 @@ class PacketManager:
         return vulnerabilities
 
     # install_package will install package in system
-    def install_package(self, queue: Queue, name: str, queue_type=""):
+    def install_package(self, queue: Queue, name: str, queue_type="", tree_space=""):
         cwd = os.getcwd()
         installed = True
         try:
@@ -124,26 +124,27 @@ class PacketManager:
             url, filename, commands = self.applications[name]
             if name in self.dependencies.keys():
                 # first we need to install dependencies
-                queue.put(queue_type + "dependencies: " + str(self.dependencies[name]))
+                queue.put(queue_type + tree_space + "dependencies: " + str(self.dependencies[name]))
                 for dependency in self.dependencies[name]:
-                    self.install_package(queue, dependency, queue_type=queue_type)
+                    self.install_package(queue, dependency, queue_type=queue_type, tree_space=tree_space+"------")
             requirement = requests.get(url)
             with open(filename, "wb") as f:
                 f.write(requirement.content)
-            for command in commands:
-                print(command)
+            for meta_command in commands:
+                command = meta_command[0]
+                description = meta_command[1]
+                queue.put(queue_type + tree_space + description)
                 if command.startswith("cd"):
                     os.chdir(command.split("$")[1])
                 else:
                     shell_command(command)
                 stdout, stderr = communicate()
-                if stderr != "":
+                if stderr.replace("\n", "").replace(" ", "") != "":
                     raise Exception
             # restart()
         except Exception as e:
             warnings.warn(str(e))
-            print(e)
-            queue.put(queue_type + "fail")
+            queue.put(queue_type + tree_space + "fail")
             installed = False
         os.chdir(cwd)
         if installed:

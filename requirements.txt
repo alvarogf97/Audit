@@ -4,7 +4,8 @@ ifaddr
 dpkt
 requests
 psutil
-pcap-ct
+pcap-ct; sys_platform == 'windows'
+pypcap; sys_platform == 'linux'
 distro
 netifaces
 vulners

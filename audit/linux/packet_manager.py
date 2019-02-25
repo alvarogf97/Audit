@@ -12,18 +12,30 @@ class LinuxPacketManager(PacketManager):
             "pcap":
                 ("https://www.tcpdump.org/release/libpcap-1.9.0.tar.gz",
                  "libpcap-1.9.0.tar.gz",
-                 ["tar xvzf libpcap-1.9.0.tar.gz", "cd$./libpcap-1.9.0", "./configure", "make", "make install"]),
+                 [["tar xvzf libpcap-1.9.0.tar.gz", "decompressing file..."],
+                  ["cd$./libpcap-1.9.0", "changing directory to installation folder"],
+                  ["./configure", "configuring installation files"],
+                  ["make", "compiling from source"],
+                  ["make install", "installing..."]]),
             "bison":
                 ("http://ftp.gnu.org/gnu/bison/bison-3.2.tar.gz",
                  "bison-3.2.tar.gz",
-                 ["tar xvzf bison-3.2.tar.gz", "cd$./bison-3.2", "./configure", "make", "make install"]),
+                 [["tar xvzf bison-3.2.tar.gz", "decompressing file..."],
+                  ["cd$./bison-3.2", "changing directory to installation folder"],
+                  ["./configure", "configuring installation files"],
+                  ["make", "compiling from source"],
+                  ["make install", "installing..."]]),
             "flex":
                 ("https://github.com/westes/flex/releases/download/v2.6.3/flex-2.6.3.tar.gz",
                  "flex-2.6.3",
-                 ["tar xvzf flex-2.6.3.tar.gz", "cd$./flex-2.6.3", "./configure", "make", "make install"])
+                 [["tar xvzf flex-2.6.3.tar.gz", "decompressing file..."],
+                  ["cd$./flex-2.6.3", "changing directory to installation folder"],
+                  ["./configure", "configuring installation files"],
+                  ["make", "compiling from source"],
+                  ["make install", "installing..."]])
         }
         dependencies = {
-                    "pcap": ["bison", "flex"]
+                    "pcap": ["bison v", "flex"]
                     }
         super().__init__(path_download_files, applications, dependencies)
 
