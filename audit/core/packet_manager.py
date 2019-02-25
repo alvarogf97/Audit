@@ -142,6 +142,7 @@ class PacketManager:
             # restart()
         except Exception as e:
             warnings.warn(str(e))
+            print(e)
             queue.put(queue_type + "fail")
             installed = False
         os.chdir(cwd)
