@@ -198,11 +198,13 @@ class LinuxFirewallManager(FirewallManager):
         return exec_command("iptables -F " + name)
 
     def add_rule(self, args):
-        info = ""
-        for name_arg, value in args.items():
-            if value != "":
-                info += self.parameters[name_arg] + " " + value + " "
-        return exec_command("iptables -A" + info)
+        chain = " " + self.parameters["chain name"] + args["chain_name"] if args["chain name"] != "" else ""
+        origin = " " + self.parameters["origin"] + args["origin"] if args["origin"] != "" else ""
+        protocol = " " + self.parameters["protocol"] + args["protocol"] if args["protocol"] != "" else ""
+        port = " " + self.parameters["port"] + args["port"] if args["port"] != "" else ""
+        policy = " " + self.parameters["policy"] + args["policy"] if args["policy"] != "" else ""
+        print("iptables -A" + chain + origin + protocol + port + policy)
+        return exec_command("iptables -A" + chain + origin + protocol + port + policy)
 
     def remove_rule(self, args):
         rule = self.rules[args["number"]]
