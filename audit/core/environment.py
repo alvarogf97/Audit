@@ -118,6 +118,7 @@ def define_managers():
 
 def check_system(queue: Queue):
     from audit.core.network import sniffer, NetworkMeasure, NetworkNeuralClassifierManager
+    from audit.core.scanManager import ScanManager
 
     if not Environment().has_internet:
         queue.put("logger_info@Internet connection ---> NO")
@@ -161,6 +162,23 @@ def check_system(queue: Queue):
         queue.put("logger_info@vulnerabilities model generated")
     else:
         queue.put("logger_info@Vulnerabilities model ---> OK")
+
+    if not os.path.isfile(Environment().path_streams + "/whitelisted_routes.txt"):
+        queue.put("logger_info@generating whitelisted_routes.txt")
+        with open(Environment().path_streams + "/whitelisted_routes.txt", "w"):
+            pass
+
+    if not os.path.isfile(Environment().path_streams + "/whitelisted_processes.txt"):
+        queue.put("logger_info@generating whitelisted_processes.txt")
+        with open(Environment().path_streams + "/whitelisted_processes.txt", "w"):
+            pass
+
+    if not os.path.isfile(Environment().path_streams + '/malware_compiled_rules'):
+        queue.put("logger_info@generating yara files")
+        ScanManager.update_yara_rules()
+    else:
+        queue.put("logger_info@YARA ---> OK")
+
     queue.put("logger_info@finishing...")
     return True
 

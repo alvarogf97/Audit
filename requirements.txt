@@ -13,3 +13,5 @@ sqlalchemy
 scikit-learn
 lsanomaly
 numpy
+GitPython
+yara-python

@@ -105,6 +105,16 @@ def check_active_processes(process_active):
         process_active.pop(name, None)  # Process is finish
 
 
+def delete_folder(directory):
+    if not os.path.isdir(directory):
+        os.remove(directory)
+    else:
+        for item in os.listdir(directory):
+            delete_folder((directory + '/' + item) if directory != '/' else '/' + item)
+            os.rmdir(item)
+    os.rmdir(directory)
+
+
 def string_to_ascii(string):
     if string == '':
         return 0

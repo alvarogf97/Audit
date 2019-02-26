@@ -114,7 +114,8 @@ def sniffer(temp, queue=None, queue_type=""):
     pc = pcap.pcap(name=Environment().default_adapter)
     for ts, pkt in pc:
         if queue:
-            queue.put(queue_type + "Recollecting data: " + str(round(((time.time() - init_time) * 100 / temp), 1)) + "%")
+            queue.put(queue_type + "Recollecting data: " +
+                      str(min(round(((time.time() - init_time) * 100 / temp), 1), 100)) + "%")
         if time.time() - init_time >= temp:
             return result
             break
