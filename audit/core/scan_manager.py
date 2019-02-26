@@ -16,6 +16,7 @@ class ScanManager:
     #       dict<String(process name), list(yara rules name)>      #
     ################################################################
 
+    # whitelisted_rules are list of rules which form part of another rules and could be false-positive#
     whitelisted_rules = ["Str_Win32_Wininet_Library",
                          "Str_Win32_Winsock2_Library",
                          "Str_Win32_Internet_API",
