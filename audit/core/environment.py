@@ -118,7 +118,7 @@ def define_managers():
 
 def check_system(queue: Queue):
     from audit.core.network import sniffer, NetworkMeasure, NetworkNeuralClassifierManager
-    from audit.core.scanManager import ScanManager
+    from audit.core.scan_manager import ScanManager
 
     if not Environment().has_internet:
         queue.put("logger_info@Internet connection ---> NO")

@@ -1,12 +1,20 @@
 import yara
 import os
+import psutil
+import time
 import warnings
 from audit.core.core import delete_folder
 from audit.core.environment import Environment
 from git import Repo
+from audit.core.file_system_manager import FileSystemManager
 
 
 class ScanManager:
+
+    ################################################################
+    #    SCAN return structure:                                    #
+    #       dict<String(process name), list(yara rules name)>      #
+    ################################################################
 
     whitelisted_rules = ["Str_Win32_Wininet_Library",
                          "Str_Win32_Winsock2_Library",
@@ -21,9 +29,13 @@ class ScanManager:
                          "PM_Zip_with_js",
                          "JavaDropper", ]
 
+    time_processes_analysis = 30
+
     def __init__(self):
-        self.whitelisted_routes = ScanManager.read_whitelist(Environment().path_streams + "whitelisted_routes.txt")
-        self.whitelisted_processes = ScanManager.read_whitelist(Environment().path_streams + "whitelisted_processes.txt")
+        self.whitelisted_routes = ScanManager.read_whitelist(Environment().path_streams + "/whitelisted_routes.txt")
+        self.whitelisted_processes = ScanManager.read_whitelist(Environment().path_streams +
+                                                                "/whitelisted_processes.txt")
+        self.rules = yara.load(Environment().path_streams + "/malware_compiled_rules")
 
     @staticmethod
     def fold_dict(dict_a, dict_b):
@@ -52,9 +64,9 @@ class ScanManager:
         ScanManager.add_to_whitelist(Environment().path_streams + "whitelisted_processes.txt", process)
 
     @staticmethod
-    def add_to_whitelist(filename, str):
+    def add_to_whitelist(filename, string):
         with open(filename, "a") as f:
-            f.write(str + "\n")
+            f.write(string + "\n")
 
     @staticmethod
     def get_rules_from_git():
@@ -139,3 +151,63 @@ class ScanManager:
             if match.rule not in self.whitelisted_rules:
                 filtered_matches.append(match)
         return filtered_matches
+
+    ######################################################
+    #                MEMORY PROCESS SCAN                 #
+    ######################################################
+
+    def check_process(self, process):
+        analysis_results = dict()
+        try:
+            matches = self.clean_matches(self.rules.match(pid=process.pid))
+            if len(matches) > 0:
+                analysis_results[process.name()] = matches
+        except Exception as e:
+            warnings.warn(str(e))
+        return analysis_results
+
+    def check_exec_processes(self, timeout=time_processes_analysis, queue=None):
+        init_time = time.time()
+        analysis_results = dict()
+        for process in psutil.process_iter():
+            analysis_results = ScanManager.fold_dict(analysis_results, self.check_process(process))
+            if queue:
+                queue.put("Executing analysis: " + str(
+                    min(round(((time.time() - init_time) * 100 / timeout), 1), 100)) + "%")
+            if time.time() - init_time >= timeout:
+                break
+        return analysis_results
+
+    ######################################################
+    #                     FILES SCAN                     #
+    ######################################################
+
+    def check_file(self, filename):
+        analysis_results = dict()
+        try:
+            with open(filename, "rb") as current_file:
+                matches = self.clean_matches(self.rules.match(data=current_file.read()))
+                if len(matches) > 0:
+                    analysis_results[filename] = matches
+        except Exception as e:
+            warnings.warn(str(e))
+        return analysis_results
+
+    def check_dir(self, name, queue=None, files_checked=0, total_files=-1):
+        analysis_results = dict()
+        if total_files == -1:
+            total_files = FileSystemManager.count_dir_files(name)
+            print(total_files)
+        if not os.path.isdir(name):
+            analysis_results = ScanManager.fold_dict(analysis_results, self.check_file(name))
+            files_checked = files_checked + 1
+            if queue:
+                queue.put("Executing analysis: " + str(min(round((files_checked * 100 / total_files), 1), 100)) + "%")
+        else:
+            for item in os.listdir(name):
+                new_results, new_files_checked = self.check_dir((name + '/' + item) if name != '/' else '/' + item,
+                                                                queue,
+                                                                files_checked, total_files)
+                analysis_results = ScanManager.fold_dict(analysis_results, new_results)
+                files_checked = new_files_checked
+        return analysis_results, files_checked
