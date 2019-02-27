@@ -329,6 +329,13 @@ class Infected:
             result.append(infected.to_json())
         return result
 
+    @staticmethod
+    def serialize_yara_rules(yara_list):
+        result = []
+        for rule in yara_list:
+            result.append(rule.rule)
+        return result
+
     @abstractmethod
     def to_json(self):
         pass
@@ -354,6 +361,7 @@ class InfectedFile(Infected):
         result["filename"] = self.filename
         result["file_route"] = self.file_route
         result["size"] = self.size
+        result["rules"] = Infected.serialize_yara_rules(self.yara_rules)
         return result
 
 
@@ -376,4 +384,5 @@ class InfectedProcess(Infected):
         result["name"] = self.name
         result["pid"] = self.pid
         result["location"] = self.location
+        result["rules"] = Infected.serialize_yara_rules(self.yara_rules)
         return result
