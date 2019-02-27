@@ -1,5 +1,6 @@
 import os
 import ntpath
+import shutil
 
 
 class FileSystemManager:
@@ -8,13 +9,17 @@ class FileSystemManager:
         pass
 
     @staticmethod
-    def delete_folder(directory):
-        if not os.path.isdir(directory):
-            os.remove(directory)
+    def onerror(func, path, exc_info):
+        import stat
+        if not os.access(path, os.W_OK):
+            os.chmod(path, stat.S_IWUSR)
+            func(path)
         else:
-            for item in os.listdir(directory):
-                FileSystemManager.delete_folder((directory + '/' + item) if directory != '/' else '/' + item)
-            os.rmdir(directory)
+            raise IOError
+
+    @staticmethod
+    def delete_folder(directory):
+        shutil.rmtree(directory, onerror=FileSystemManager.onerror)
 
     @staticmethod
     def count_dir_files(directory):
