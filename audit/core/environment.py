@@ -118,7 +118,7 @@ def define_managers():
 
 def check_system(queue: Queue):
     from audit.core.network import sniffer, NetworkMeasure, NetworkNeuralClassifierManager
-    from audit.core.scan_manager import ScanManager
+    from audit.core.yara_manager import YaraManager
 
     if not Environment().has_internet:
         queue.put("logger_info@Internet connection ---> NO")
@@ -175,7 +175,7 @@ def check_system(queue: Queue):
 
     if not os.path.isfile(Environment().path_streams + '/malware_compiled_rules'):
         queue.put("logger_info@generating yara files")
-        ScanManager.update_yara_rules()
+        YaraManager.update_yara_rules()
     else:
         queue.put("logger_info@YARA ---> OK")
 
