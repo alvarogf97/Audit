@@ -59,6 +59,7 @@ class Environment:
             self.packetManager = None
             self.firewallManager = None
             self.networkNeuralClassifierManager = None
+            self.yaraManager = None
 
     instance = None
 
@@ -97,6 +98,8 @@ def get_features():
 
 
 def define_managers():
+    from audit.core.yara_manager import YaraManager
+    Environment().__setattr__("yaraManager", YaraManager())
     if Environment().os == "Windows":
         from audit.windows.packet_manager import WindowsPacketManager
         from audit.windows.firewall_manager import WindowsFirewallManager
