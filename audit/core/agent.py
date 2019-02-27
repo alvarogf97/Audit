@@ -7,7 +7,6 @@ from audit.core.connection import Connection
 from audit.core.core import check_active_processes, cd, get_processes, kill_process, restart, exec_command
 from audit.core.device import device_info
 from audit.core.environment import Environment, define_managers
-from audit.core.file_protocols import get, send
 from audit.core.ip_utils import send_ip
 from audit.core.network import get_ports_open_by_processes, network_analysis
 from audit.core.port_forwarding import open_port
@@ -295,17 +294,20 @@ class Agent:
                                 Environment().firewallManager.execute_firewall_action(request_query["command"],
                                                                                       request_query["args"])))
 
-                        elif request_query["command"].startswith("restart"):
-                            restart()
-
-                        elif request_query["command"].startswith("get"):
-                            get(self.connection, request_query["command"])
-
-                        elif request_query["command"].startswith("send"):
-                            try:
-                                send(self.connection, request_query["command"])
-                            except IOError as error:
-                                warnings.warn(str(error))
+                        elif request_query["command"].startswith("yarascan"):
+                            """
+                                response =
+                                    {
+                                        "status" : boolean
+                                        "data" : Infected item list
+                                        "scan_type" : integer
+                                    }
+                            """
+                            self.connection.send_msg(self.parse_json(
+                                Environment().yaraManager.yara_action(request_query["command"],
+                                                                      request_query["args"],
+                                                                      self.active_processes)
+                            ))
 
                         else:
                             """

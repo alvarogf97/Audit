@@ -35,7 +35,10 @@ class YaraManager:
         self.whitelisted_routes = YaraManager.read_whitelist(Environment().path_streams + "/whitelisted_routes.txt")
         self.whitelisted_processes = YaraManager.read_whitelist(Environment().path_streams +
                                                                 "/whitelisted_processes.txt")
-        self.rules = yara.load(Environment().path_streams + "/malware_compiled_rules")
+        cwd = os.getcwd()
+        os.chdir(Environment().path_streams)
+        self.rules = yara.load("malware_compiled_rules")
+        os.chdir(cwd)
         self.last_msg = ""
         self.last_scan_type = 0
 
@@ -65,16 +68,23 @@ class YaraManager:
 
     @staticmethod
     def add_route_exception(route):
-        YaraManager.add_to_whitelist(Environment().path_streams + "whitelisted_routes.txt", route)
+        return YaraManager.add_to_whitelist(Environment().path_streams + "whitelisted_routes.txt", route)
 
     @staticmethod
     def add_process_exception(process):
-        YaraManager.add_to_whitelist(Environment().path_streams + "whitelisted_processes.txt", process)
+        return YaraManager.add_to_whitelist(Environment().path_streams + "whitelisted_processes.txt", process)
 
     @staticmethod
     def add_to_whitelist(filename, string):
-        with open(filename, "a") as f:
-            f.write(string + "\n")
+        result = dict()
+        try:
+            with open(filename, "a") as f:
+                f.write(string + "\n")
+                result["status"] = True
+        except Exception as e:
+            warnings.warn(str(e))
+            result["status"] = False
+        return result
 
     @staticmethod
     def get_rules_from_git():
@@ -150,7 +160,10 @@ class YaraManager:
         os.chdir(cwd)
         os.remove(Environment().path_streams + '/malware_rules.yar')
         os.chdir(Environment().path_download_files)
-        FileSystemManager.delete_folder("YARA")
+        try:
+            FileSystemManager.delete_folder("YARA")
+        except Exception as e:
+            warnings.warn(str(e))
         os.chdir(cwd)
 
     def clean_matches(self, matches):
@@ -221,7 +234,7 @@ class YaraManager:
         return analysis_results, files_checked
 
     ######################################################
-    #                     SCAN FACADE                    #
+    #                          SCAN                      #
     ######################################################
 
     def background_scan(self, args, queue):
@@ -287,6 +300,18 @@ class YaraManager:
             warnings.warn(str(e))
             last = self.last_msg
         return last
+
+    ######################################################
+    #                        FACADE                      #
+    ######################################################
+
+    def yara_action(self, command, args, processes_active):
+        if command.startswith("yarascan scan"):
+            return self.scan(args, processes_active)
+        elif command.startswith("yarascan process exception"):
+            return YaraManager.add_process_exception(args["process"])
+        elif command.startswith("yarascan route exception"):
+            return YaraManager.add_process_exception(args["route"])
 
 
 class Infected:

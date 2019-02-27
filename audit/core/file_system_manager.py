@@ -14,8 +14,7 @@ class FileSystemManager:
         else:
             for item in os.listdir(directory):
                 FileSystemManager.delete_folder((directory + '/' + item) if directory != '/' else '/' + item)
-                os.rmdir(item)
-        os.rmdir(directory)
+            os.rmdir(directory)
 
     @staticmethod
     def count_dir_files(directory):

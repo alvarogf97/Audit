@@ -98,8 +98,6 @@ def get_features():
 
 
 def define_managers():
-    from audit.core.yara_manager import YaraManager
-    Environment().__setattr__("yaraManager", YaraManager())
     if Environment().os == "Windows":
         from audit.windows.packet_manager import WindowsPacketManager
         from audit.windows.firewall_manager import WindowsFirewallManager
@@ -181,6 +179,7 @@ def check_system(queue: Queue):
         YaraManager.update_yara_rules()
     else:
         queue.put("logger_info@YARA ---> OK")
+    Environment().yaraManager = YaraManager()
 
     queue.put("logger_info@finishing...")
     return True
