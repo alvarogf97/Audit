@@ -11,11 +11,6 @@ from audit.core.file_system_manager import FileSystemManager
 
 class ScanManager:
 
-    ################################################################
-    #    SCAN return structure:                                    #
-    #       dict<String(process name), list(yara rules name)>      #
-    ################################################################
-
     # whitelisted_rules are list of rules which form part of another rules and could be false-positive#
     whitelisted_rules = ["Str_Win32_Wininet_Library",
                          "Str_Win32_Winsock2_Library",
@@ -212,3 +207,40 @@ class ScanManager:
                 analysis_results = ScanManager.fold_dict(analysis_results, new_results)
                 files_checked = new_files_checked
         return analysis_results, files_checked
+
+
+class InfectedFile:
+
+    def __init__(self, file, yara_rules):
+        self.abs_path = file
+        self.filename = FileSystemManager.path_leaf(file)
+        self.file_route = FileSystemManager.base_path(file)
+        self.size = FileSystemManager.get_file_size(file)
+        self.yara_rules = yara_rules
+
+    def __eq__(self, other):
+        result = False
+        if isinstance(other, InfectedFile):
+            result = self.abs_path == other.abs_path
+        return result
+
+    def add_rules(self, rules):
+        self.yara_rules = list(set().union(self.yara_rules, rules))
+
+
+class InfectedProcess:
+
+    def __init__(self, process, yara_rules):
+        self.name = process.name()
+        self.pid = process.pid
+        self.location = process.exe()
+        self.yara_rules = yara_rules
+
+    def __eq__(self, other):
+        result = False
+        if isinstance(other, InfectedProcess):
+            result = self.location == other.location
+        return result
+
+    def add_rules(self, rules):
+        self.yara_rules = list(set().union(self.yara_rules, rules))
