@@ -37,3 +37,18 @@ class FileSystemManager:
     @staticmethod
     def get_file_size(file_path):
         return ntpath.getsize(file_path)
+
+    @staticmethod
+    def get_directory_content(path):
+        result = dict()
+        result["status"] = True
+        result["data"] = dict()
+        result["data"]["directories"] = [FileSystemManager.base_path(directory)
+                                         for directory in
+                                         [os.path.join(path, o) for o in os.listdir(path) if
+                                          os.path.isdir(os.path.join(path, o))]]
+        result["data"]["files"] = [FileSystemManager.base_path(file)
+                                   for file in
+                                   [os.path.join(path, o) for o in os.listdir(path) if
+                                    os.path.isdir(os.path.join(path, o))]]
+        return result

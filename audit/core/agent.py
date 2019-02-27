@@ -1,6 +1,7 @@
 import json
 import os
 import warnings
+from audit.core.file_system_manager import FileSystemManager
 from audit.database.user import User
 from multiprocessing import Queue
 from audit.core.connection import Connection
@@ -308,6 +309,21 @@ class Agent:
                                                                       request_query["args"],
                                                                       self.active_processes)
                             ))
+
+                        elif request_query["command"].startswith("get folder content"):
+                            """
+                                response =
+                                    {
+                                        "status" : boolean
+                                        "data" : 
+                                                {
+                                                    ["directories"]: string list
+                                                    ["files"]: string list
+                                                }
+                                    }
+                            """
+                            self.connection.send_msg(self.parse_json(
+                                FileSystemManager.get_directory_content(request_query["args"])))
 
                         else:
                             """
