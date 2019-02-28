@@ -1,6 +1,7 @@
 import os
 import ntpath
 import shutil
+from hurry.filesize import size, alternative
 
 
 class FileSystemManager:
@@ -36,7 +37,7 @@ class FileSystemManager:
 
     @staticmethod
     def get_file_size(file_path):
-        return ntpath.getsize(file_path)
+        return size(ntpath.getsize(file_path), system=alternative)
 
     @staticmethod
     def get_directory_content(path):

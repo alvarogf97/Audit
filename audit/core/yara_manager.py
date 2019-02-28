@@ -35,27 +35,25 @@ class YaraManager:
         self.whitelisted_routes = YaraManager.read_whitelist(Environment().path_streams + "/whitelisted_routes.txt")
         self.whitelisted_processes = YaraManager.read_whitelist(Environment().path_streams +
                                                                 "/whitelisted_processes.txt")
-        cwd = os.getcwd()
-        os.chdir(Environment().path_streams)
-        self.rules = yara.load("malware_compiled_rules")
-        os.chdir(cwd)
+        self.rules = None
         self.last_msg = ""
         self.last_scan_type = 0
 
     @staticmethod
     def update_list(_list, list_item):
+        found = False
         for item in _list:
             if item == list_item:
                 item.add_rules(list_item.yara_rules)
+                found = True
+        if not found:
+            _list.append(list_item)
 
     @staticmethod
     def fold(infected_a, infected_b):
         infected_list = infected_a.copy()
         for infected in infected_b:
-            if infected in infected_list:
-                YaraManager.update_list(infected_list, infected)
-            else:
-                infected_list.append(infected)
+            YaraManager.update_list(infected_list, infected)
         return infected_list
 
     @staticmethod
@@ -152,7 +150,6 @@ class YaraManager:
         all_yara_filtered_1 = YaraManager.remove_incompatible_imports(all_yara_files)
         all_yara_filtered_2 = YaraManager.fix_duplicated_rules(all_yara_filtered_1)
         YaraManager.merge_rules(all_yara_filtered_2)
-        print(Environment().path_streams + '/malware_rules.yar')
         cwd = os.getcwd()
         os.chdir(Environment().path_streams)
         rules = yara.compile(filepath='malware_rules.yar')
@@ -189,14 +186,14 @@ class YaraManager:
 
     def check_exec_processes(self, queue=None, timeout=time_processes_analysis):
         init_time = time.time()
-        analysis_results = dict()
+        analysis_results = []
         for process in psutil.process_iter():
-            analysis_results = YaraManager.fold(analysis_results, self.check_process(process))
             if queue:
                 queue.put("Executing analysis: " + str(
                     min(round(((time.time() - init_time) * 100 / timeout), 1), 100)) + "%")
             if time.time() - init_time >= timeout:
                 break
+            analysis_results = YaraManager.fold(analysis_results, self.check_process(process))
         return analysis_results
 
     ######################################################
@@ -218,7 +215,6 @@ class YaraManager:
         analysis_results = []
         if total_files == -1:
             total_files = FileSystemManager.count_dir_files(name)
-            print(total_files)
         if not os.path.isdir(name):
             analysis_results = YaraManager.fold(analysis_results, self.check_file(name))
             files_checked = files_checked + 1
@@ -237,7 +233,20 @@ class YaraManager:
     #                          SCAN                      #
     ######################################################
 
+    def is_scan_active(self, processes_active):
+        result = dict()
+        if "yarascan" in processes_active.keys():
+            result["status"] = True
+            result["scan_type"] = self.last_scan_type
+        else:
+            result["status"] = False
+        return result
+
     def background_scan(self, args, queue):
+        cwd = os.getcwd()
+        os.chdir(Environment().path_streams)
+        self.rules = yara.load("malware_compiled_rules")
+        os.chdir(cwd)
         if args["scan_type"] == 0:
             result = self.check_file(args["filename"])
         elif args["scan_type"] == 1:
@@ -247,14 +256,13 @@ class YaraManager:
         result = Infected.list_to_json(result)
         with open(Environment().path_streams + '/yara_last_scan.json', 'w') as fp:
             json.dump(result, fp, sort_keys=True, indent=4)
-        return
 
     def scan(self, args, processes_active):
 
         """
         :param processes_active: current active subprocess
         :param args = [
-            "scan_type" : (0 for file, 1 for directory, 3 for memory process)
+            "scan_type" : (0 for file, 1 for directory, 2 for memory process)
             "directory" : "" (dir_name if scan_type = 1)
             "filename" : "" (file_name if scan_type = 0)
         ]
@@ -290,6 +298,7 @@ class YaraManager:
             else:
                 result["data"] = self.last_msg
                 result["status"] = True
+        print(result)
         return result
 
     def get_queue_msg(self, queue: Queue):
@@ -312,6 +321,8 @@ class YaraManager:
             return YaraManager.add_process_exception(args["process"])
         elif command.startswith("yarascan route exception"):
             return YaraManager.add_process_exception(args["route"])
+        elif command.startswith("yarascan is active"):
+            return self.is_scan_active(processes_active)
 
 
 class Infected:
@@ -382,7 +393,7 @@ class InfectedProcess(Infected):
     def to_json(self):
         result = dict()
         result["name"] = self.name
-        result["pid"] = self.pid
+        result["pid"] = str(self.pid)
         result["location"] = self.location
         result["rules"] = Infected.serialize_yara_rules(self.yara_rules)
         return result

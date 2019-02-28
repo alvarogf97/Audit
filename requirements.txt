@@ -1,6 +1,7 @@
 upnpclient
 wxpython
 ifaddr
+hurry.filesize
 dpkt
 requests
 psutil
