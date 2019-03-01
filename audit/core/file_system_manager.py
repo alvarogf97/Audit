@@ -43,13 +43,36 @@ class FileSystemManager:
     def get_directory_content(path):
         result = dict()
         result["status"] = True
-        result["data"] = dict()
-        result["data"]["directories"] = [FileSystemManager.base_path(directory)
-                                         for directory in
-                                         [os.path.join(path, o) for o in os.listdir(path) if
-                                          os.path.isdir(os.path.join(path, o))]]
-        result["data"]["files"] = [FileSystemManager.base_path(file)
-                                   for file in
-                                   [os.path.join(path, o) for o in os.listdir(path) if
-                                    os.path.isdir(os.path.join(path, o))]]
+        parent_path = os.path.dirname(path)
+        directories = [FileSystemDocument(FileSystemManager.base_path(directory), directory, False)
+                       for directory in
+                       [os.path.join(path, o) for o in os.listdir(path) if
+                        os.path.isdir(os.path.join(path, o))]]
+        files = [FileSystemDocument(FileSystemManager.base_path(file), file, True)
+                 for file in
+                 [os.path.join(path, o) for o in os.listdir(path) if
+                  os.path.isdir(os.path.join(path, o))]]
+        result["data"] = directories + files + [FileSystemDocument("...", parent_path, False)]
+        return result
+
+
+class FileSystemDocument:
+
+    def __init__(self, name, abs_path, is_file):
+        self.name = name
+        self.abs_path = abs_path
+        self.is_file = is_file
+
+    def to_json(self):
+        result = dict()
+        result["name"] = self.name
+        result["abs_path"] = self.abs_path
+        result["is_file"] = self.is_file
+        return result
+
+    @staticmethod
+    def list_to_json(_list):
+        result = []
+        for document in _list:
+            result.append(document.to_json())
         return result

@@ -316,10 +316,9 @@ class Agent:
                                     {
                                         "status" : boolean
                                         "data" : 
-                                                {
-                                                    ["directories"]: string list
-                                                    ["files"]: string list
-                                                }
+                                                [
+                                                    FileSystemDocument
+                                                ]
                                     }
                             """
                             self.connection.send_msg(self.parse_json(
