@@ -1,0 +1,13 @@
+setuptools>=39.2.0
+cffi>=1.11.5
+
+[doc]
+Sphinx>=1.6.7
+mock>=2.0.0
+
+[test]
+
+[test:python_version < "3.0"]
+unittest2
+mock>=2.0.0
+win_inet_pton>=1.0.1

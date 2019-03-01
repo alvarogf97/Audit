@@ -1,0 +1,10 @@
+setuptools>=39.2.0
+
+[doc]
+Sphinx>=1.6.7
+
+[test]
+
+[test:python_version < "3.0"]
+unittest2
+mock>=2.0.0

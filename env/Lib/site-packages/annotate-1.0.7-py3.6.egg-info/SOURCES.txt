@@ -1,0 +1,16 @@
+CHANGES.rst
+LICENSE
+MANIFEST.in
+README.rst
+setup.cfg
+setup.py
+tox.ini
+annotate/__about__.py
+annotate/__init__.py
+annotate/_annotate.py
+annotate.egg-info/PKG-INFO
+annotate.egg-info/SOURCES.txt
+annotate.egg-info/dependency_links.txt
+annotate.egg-info/requires.txt
+annotate.egg-info/top_level.txt
+annotate.egg-info/zip-safe

@@ -1,0 +1,14 @@
+setuptools>=39.2.0
+annotate
+libpcap
+
+[doc]
+Sphinx>=1.6.7
+
+[test]
+dpkt>=1.9.1
+
+[test:python_version < "3.0"]
+unittest2
+mock>=2.0.0
+win_inet_pton>=1.0.1
