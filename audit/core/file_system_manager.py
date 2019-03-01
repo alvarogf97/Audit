@@ -44,15 +44,16 @@ class FileSystemManager:
         result = dict()
         result["status"] = True
         parent_path = os.path.dirname(path)
-        directories = [FileSystemDocument(FileSystemManager.base_path(directory), directory, False)
+        directories = [FileSystemDocument(FileSystemManager.path_leaf(directory), directory, False)
                        for directory in
                        [os.path.join(path, o) for o in os.listdir(path) if
                         os.path.isdir(os.path.join(path, o))]]
-        files = [FileSystemDocument(FileSystemManager.base_path(file), file, True)
+        files = [FileSystemDocument(FileSystemManager.path_leaf(file), file, True)
                  for file in
-                 [os.path.join(path, o) for o in os.listdir(path) if
+                 [os.path.join(path, o) for o in os.listdir(path) if not
                   os.path.isdir(os.path.join(path, o))]]
-        result["data"] = directories + files + [FileSystemDocument("...", parent_path, False)]
+        documents = [FileSystemDocument("...", parent_path, False)] + directories + files
+        result["data"] = FileSystemDocument.list_to_json(documents)
         return result
 
 

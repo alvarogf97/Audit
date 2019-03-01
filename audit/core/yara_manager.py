@@ -254,6 +254,7 @@ class YaraManager:
         else:
             result = self.check_exec_processes(queue)
         result = Infected.list_to_json(result)
+        print(result)
         with open(Environment().path_streams + '/yara_last_scan.json', 'w') as fp:
             json.dump(result, fp, sort_keys=True, indent=4)
 
@@ -286,18 +287,14 @@ class YaraManager:
             result["status"] = False
             self.last_msg = result
         else:
-            if not isinstance(self.last_msg, Dict):
-                with open(Environment().path_streams + "/yara_last_scan.json", "r") as f:
-                    output = json.loads(f.read())
-                result["data"] = output
-                result["status"] = True
-                result["scan_type"] = self.last_scan_type
-                self.last_msg = output
-                # delete file for next SCAN
-                os.remove(Environment().path_streams + "/yara_last_scan.json")
-            else:
-                result["data"] = self.last_msg
-                result["status"] = True
+            with open(Environment().path_streams + "/yara_last_scan.json", "r") as f:
+                output = json.loads(f.read())
+            result["data"] = output
+            result["status"] = True
+            result["scan_type"] = self.last_scan_type
+            self.last_msg = output
+            # delete file for next SCAN
+            os.remove(Environment().path_streams + "/yara_last_scan.json")
         print(result)
         return result
 
