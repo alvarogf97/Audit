@@ -6,7 +6,6 @@ import warnings
 import multiprocessing
 import json
 from abc import abstractmethod
-from typing import Dict
 from multiprocessing import Queue
 from audit.core.environment import Environment
 from git import Repo
@@ -27,7 +26,8 @@ class YaraManager:
                          "SharedStrings",
                          "RSharedStrings",
                          "PM_Zip_with_js",
-                         "JavaDropper", ]
+                         "JavaDropper",
+                         "spyeye",]
 
     time_processes_analysis = 30
 
@@ -250,11 +250,10 @@ class YaraManager:
         if args["scan_type"] == 0:
             result = self.check_file(args["filename"])
         elif args["scan_type"] == 1:
-            result = self.check_dir(args["directory"], queue)
+            result = self.check_dir(args["directory"], queue)[0]
         else:
             result = self.check_exec_processes(queue)
         result = Infected.list_to_json(result)
-        print(result)
         with open(Environment().path_streams + '/yara_last_scan.json', 'w') as fp:
             json.dump(result, fp, sort_keys=True, indent=4)
 
@@ -285,17 +284,15 @@ class YaraManager:
             processes_active["yarascan"] = (yarascan, time.time(), queue)
             result["data"] = "launch scanner"
             result["status"] = False
-            self.last_msg = result
+            self.last_msg = ""
         else:
             with open(Environment().path_streams + "/yara_last_scan.json", "r") as f:
                 output = json.loads(f.read())
             result["data"] = output
             result["status"] = True
             result["scan_type"] = self.last_scan_type
-            self.last_msg = output
             # delete file for next SCAN
             os.remove(Environment().path_streams + "/yara_last_scan.json")
-        print(result)
         return result
 
     def get_queue_msg(self, queue: Queue):
