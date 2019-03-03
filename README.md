@@ -33,7 +33,7 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Prerequisites
 
-You need to have python 3.5+ in order to use this application and pip installed on your computer.
+You need to have python 3.5+ in order to use this application, pip and git installed on your computer.
 
 #### Linux
 
