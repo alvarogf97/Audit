@@ -64,16 +64,10 @@ sudo apt install make gcc libgtk-3-dev libwebkitgtk-dev libwebkitgtk-3.0-dev lib
 sudo apt install libpcap-dev
 ```
 
-##### RHEL based distros:
-
-```
-Give examples
-```
-
 ##### Arch based distros:
 
 ```
-Give examples
+pacman -S libpcap
 ```
 
 ##### Install WxPython:
@@ -95,9 +89,16 @@ pip install wxpython
 
 Or just install by the compiled wheel in https://mega.nz/#!B4BwBIiZ!5Hvl2vkVfeRwYPcRIDVGgNedjma7e3jd1ck8GClmc9g using easy_install:
 
-````angular2
+````
 easy_install wxPython-4.0.4-cp36-cp36m-linux_x86_64.whl
 ````
+
+In order to install it in arch based distros you can execute:
+
+````
+pacman -S python-wxpython
+````
+
 #### Windows
 
 You can install PCAP lib by yourself with this link 

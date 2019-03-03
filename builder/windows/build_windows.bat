@@ -1,1 +1,1 @@
-pyinstaller ../../start.py --onefile --windowed --ico="../icon/icon.ico" --add-data ../../resources/certs;certs --add-data ../icon;icon  --uac-admin --noupx --clean --hidden-import=sklearn.neighbors.typedefs
+pyinstaller ../../start.py --onefile --ico="../icon/icon.ico" --add-data ../../resources/certs;certs --add-data ../icon;icon  --uac-admin --noupx --clean --hidden-import=sklearn.neighbors.typedefs
