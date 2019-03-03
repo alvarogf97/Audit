@@ -6,9 +6,6 @@ from hurry.filesize import size, alternative
 
 class FileSystemManager:
 
-    def __init__(self):
-        pass
-
     @staticmethod
     def onerror(func, path, exc_info):
         import stat
