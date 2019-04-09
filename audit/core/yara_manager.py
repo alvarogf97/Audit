@@ -163,6 +163,14 @@ class YaraManager:
             warnings.warn(str(e))
         os.chdir(cwd)
 
+    @staticmethod
+    def compile_from_yar():
+        cwd = os.getcwd()
+        os.chdir(Environment().path_streams)
+        rules = yara.compile(filepath='malware_rules.yar')
+        rules.save('malware_compiled_rules')
+        os.chdir(cwd)
+
     def clean_matches(self, matches):
         filtered_matches = []
         for match in matches:

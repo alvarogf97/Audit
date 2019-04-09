@@ -175,8 +175,11 @@ def check_system(queue: Queue):
             pass
 
     if not os.path.isfile(Environment().path_streams + '/malware_compiled_rules'):
-        queue.put("logger_info@generating yara files")
-        YaraManager.update_yara_rules()
+        if not os.path.isfile(Environment().path_streams + '/malware_rules.yar'):
+            queue.put("logger_info@generating yara files")
+            YaraManager.update_yara_rules()
+        else:
+            YaraManager.compile_from_yar()
     else:
         queue.put("logger_info@YARA ---> OK")
     Environment().yaraManager = YaraManager()
